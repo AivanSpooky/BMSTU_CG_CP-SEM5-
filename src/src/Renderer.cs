@@ -26,36 +26,31 @@ namespace src
         }
     }
 
-    public class Renderer : Control
+    public class Renderer
     {
-        private List<Shape3D> shapes;
         private Matrix4x4 cameraViewMatrix;
         private Matrix4x4 projectionMatrix;
         private Camera camera;
         private float zoom = 10.0f; // Initial zoom level
 
-        public delegate void RenderAlgorithm(Graphics g, List<Point> projectedVertices, int[][] faces);
+        private PictureBox main_pb;
         private RenderAlgorithm renderAlgorithm;
 
-        public Renderer()
+        public delegate void RenderAlgorithm(Graphics g, List<Point> projectedVertices, int[][] faces);
+
+        public Renderer(Form mainform, PictureBox pictureBox)
         {
+            main_pb = pictureBox;
             // Initialize camera
             camera = new Camera(new Vector3(0, 0, -zoom), Vector3.UnitY, Vector3.Zero);
 
-            shapes = new List<Shape3D>
-            {
-                new Cube3D(2.0f, new Vector3(0, 0, 0)),
-                new Sphere3D(16, 16, new Vector3(0, 0, 10)),
-                new RectangularPrism3D(20, 2, 20, new Vector3(0, -1, 0))
-            };
             renderAlgorithm = ZBufferRendering;
 
             // Set initial camera and projection
             UpdateCameraAndProjection();
 
-            // Subscribe to key events
-            KeyDown += new KeyEventHandler(OnKeyDown);
-            DoubleBuffered = true; // Improve rendering performance
+            mainform.KeyDown += new KeyEventHandler(OnKeyDown);
+            main_pb.Paint += new PaintEventHandler(OnPaint);
         }
 
         private void UpdateCameraAndProjection()
@@ -64,7 +59,7 @@ namespace src
             cameraViewMatrix = camera.GetViewMatrix();
 
             // Create projection matrix
-            projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView((float)Math.PI / 4, (float)Width / Height, 0.1f, 1000.0f);
+            projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView((float)Math.PI / 4, (float)main_pb.Width / main_pb.Height, 0.1f, 1000.0f);
         }
 
         private List<Point> ProjectVertices(List<Vector3> vertices)
@@ -77,12 +72,12 @@ namespace src
                 transformed = Vector3.Transform(transformed, projectionMatrix);
 
                 // Handle perspective division
-                float x = (transformed.X / transformed.Z) * (Width / 2) + (Width / 2);
-                float y = (transformed.Y / transformed.Z) * (Height / 2) + (Height / 2);
+                float x = (transformed.X / transformed.Z) * (main_pb.Width / 2) + (main_pb.Width / 2);
+                float y = (transformed.Y / transformed.Z) * (main_pb.Height / 2) + (main_pb.Height / 2);
 
                 // Clamp values to screen bounds
-                int screenX = (int)Clamp(x, 0, Width - 1);
-                int screenY = (int)Clamp(y, 0, Height - 1);
+                int screenX = (int)Clamp(x, 0, main_pb.Width - 1);
+                int screenY = (int)Clamp(y, 0, main_pb.Height - 1);
 
                 projected.Add(new Point(screenX, screenY));
             }
@@ -94,13 +89,12 @@ namespace src
             return Math.Max(min, Math.Min(value, max));
         }
 
-        protected override void OnPaint(PaintEventArgs e)
+        private void OnPaint(object sender, PaintEventArgs e)
         {
-            base.OnPaint(e);
             Graphics g = e.Graphics;
             g.Clear(Color.White);
 
-            foreach (var shape in shapes)
+            foreach (var shape in Scene.Shapes)
             {
                 List<Point> projectedVertices = ProjectVertices(shape.Vertices);
                 foreach (var polygon in shape.Polygons)
@@ -203,7 +197,7 @@ namespace src
             UpdateCameraAndProjection();
 
             // Redraw the scene
-            Invalidate();
+            main_pb.Invalidate();
         }
     }
 }

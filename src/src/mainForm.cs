@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 using System.Windows.Forms;
 
 namespace src
@@ -10,11 +11,21 @@ namespace src
         public mainForm()
         {
             InitializeComponent();
-            renderer = new Renderer();  // Инициализируем рендерер
+                
+            Scene.AddShape(new Cube3D(2.0f, new Vector3(0, 0, 0)));
+            Scene.AddShape(new Sphere3D(16, 16, new Vector3(0, 0, 10)));
+            Scene.AddShape(new RectangularPrism3D(20, 2, 20, new Vector3(0, -1, 0)));
+            Renderer renderer = new Renderer(this, main_pb);  // Инициализируем рендерер
+        }
 
-            // Добавляем рендерер как контрол в форму
-            renderer.Dock = DockStyle.Fill;  // Устанавливаем, чтобы рендерер занимал все пространство формы
-            Controls.Add(renderer);     // Добавляем рендерер в контролы формы
+        private void pictureBox1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void renderer_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
