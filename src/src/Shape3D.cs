@@ -1,45 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Numerics;
 
 namespace src
 {
-    /*public class Polygon
-    {
-        public int[] VertexIndices { get; private set; }
-
-        public Polygon(int[] vertexIndices)
-        {
-            VertexIndices = vertexIndices;
-        }
-
-        // Метод для получения нормали полигона
-        public Vector3 GetNormal(List<Vector3> vertices)
-        {
-            var v0 = vertices[VertexIndices[0]];
-            var v1 = vertices[VertexIndices[1]];
-            var v2 = vertices[VertexIndices[2]];
-
-            // Вычисляем нормаль через векторное произведение
-            var normal = Vector3.Cross(v1 - v0, v2 - v0);
-            normal = Vector3.Normalize(normal);
-
-            return normal;
-        }
-    }*/
-
     public abstract class Shape3D
     {
         public List<Vector3> Vertices { get; protected set; }
+        public List<Vector3> TransformedVertices { get; set; } = new List<Vector3>();
         public List<Polygon> Polygons { get; protected set; }
         public Vector3 Position { get; set; }
+        public Color ShapeColor { get; private set; } // Новый свойство Color
 
-        public Shape3D(Vector3 position)
+        public Shape3D(Vector3 position, Color color)
         {
             Position = position;
+            ShapeColor = color; // Присваиваем цвет
             Vertices = new List<Vector3>();
             Polygons = new List<Polygon>();
+        }
+
+        // Метод для установки нового цвета фигуры
+        public void SetColor(Color color)
+        {
+            ShapeColor = color;
         }
 
         // Метод для трансформации объекта (перемещения, вращения, масштабирования)
@@ -82,7 +68,6 @@ namespace src
             }
         }
 
-
         public Shape3D GetTurnedShape(double tetax, double tetay, double tetaz)
         {
             // Создание копии текущей фигуры
@@ -97,6 +82,9 @@ namespace src
             // Копирование полигонов
             turnedShape.Polygons = new List<Polygon>(Polygons);
 
+            // Копирование цвета
+            turnedShape.ShapeColor = ShapeColor;
+
             return turnedShape;
         }
 
@@ -109,7 +97,7 @@ namespace src
     {
         public float Size { get; private set; }
 
-        public Cube3D(float size, Vector3 position) : base(position)
+        public Cube3D(float size, Vector3 position, Color color) : base(position, color) // Pass color to base constructor
         {
             Size = size;
             GenerateShape();
@@ -132,12 +120,12 @@ namespace src
             });
 
             // Генерация полигонов куба (6 граней)
-            Polygons.Add(new Polygon(new int[] { 0, 1, 2, 3 })); // Задняя грань
-            Polygons.Add(new Polygon(new int[] { 4, 5, 6, 7 })); // Передняя грань
-            Polygons.Add(new Polygon(new int[] { 0, 1, 5, 4 })); // Нижняя грань
-            Polygons.Add(new Polygon(new int[] { 2, 3, 7, 6 })); // Верхняя грань
-            Polygons.Add(new Polygon(new int[] { 0, 3, 7, 4 })); // Левая грань
-            Polygons.Add(new Polygon(new int[] { 1, 2, 6, 5 })); // Правая грань
+            Polygons.Add(new Polygon(new int[] { 0, 1, 2, 3 }, ShapeColor)); // Задняя грань
+            Polygons.Add(new Polygon(new int[] { 4, 5, 6, 7 }, ShapeColor)); // Передняя грань
+            Polygons.Add(new Polygon(new int[] { 0, 1, 5, 4 }, ShapeColor)); // Нижняя грань
+            Polygons.Add(new Polygon(new int[] { 2, 3, 7, 6 }, ShapeColor)); // Верхняя грань
+            Polygons.Add(new Polygon(new int[] { 0, 3, 7, 4 }, ShapeColor)); // Левая грань
+            Polygons.Add(new Polygon(new int[] { 1, 2, 6, 5 }, ShapeColor)); // Правая грань
         }
     }
 
@@ -147,7 +135,7 @@ namespace src
         public float Height { get; private set; }
         public float Depth { get; private set; }
 
-        public RectangularPrism3D(float width, float height, float depth, Vector3 center) : base(center)
+        public RectangularPrism3D(float width, float height, float depth, Vector3 center, Color color) : base(center, color)
         {
             Width = width;
             Height = height;
@@ -177,12 +165,12 @@ namespace src
             });
 
             // Generate polygons (12 triangles, 6 faces)
-            Polygons.Add(new Polygon(new int[] { 0, 1, 2, 3 })); // Back face
-            Polygons.Add(new Polygon(new int[] { 4, 5, 6, 7 })); // Front face
-            Polygons.Add(new Polygon(new int[] { 0, 1, 5, 4 })); // Bottom face
-            Polygons.Add(new Polygon(new int[] { 2, 3, 7, 6 })); // Top face
-            Polygons.Add(new Polygon(new int[] { 0, 3, 7, 4 })); // Left face
-            Polygons.Add(new Polygon(new int[] { 1, 2, 6, 5 })); // Right face
+            Polygons.Add(new Polygon(new int[] { 0, 1, 2, 3 }, ShapeColor)); // Back face
+            Polygons.Add(new Polygon(new int[] { 4, 5, 6, 7 }, ShapeColor)); // Front face
+            Polygons.Add(new Polygon(new int[] { 0, 1, 5, 4 }, ShapeColor)); // Bottom face
+            Polygons.Add(new Polygon(new int[] { 2, 3, 7, 6 }, ShapeColor)); // Top face
+            Polygons.Add(new Polygon(new int[] { 0, 3, 7, 4 }, ShapeColor)); // Left face
+            Polygons.Add(new Polygon(new int[] { 1, 2, 6, 5 }, ShapeColor)); // Right face
         }
     }
 
@@ -192,8 +180,8 @@ namespace src
         private int latitudeSegments;
         private int longitudeSegments;
 
-        public Sphere3D(int latitudeSegments = 16, int longitudeSegments = 16, Vector3 position = default(Vector3))
-            : base(position)
+        public Sphere3D(int latitudeSegments, int longitudeSegments, Vector3 position, Color color)
+            : base(position, color)
         {
             this.latitudeSegments = latitudeSegments;
             this.longitudeSegments = longitudeSegments;
@@ -232,8 +220,8 @@ namespace src
                     int first = lat * (longitudeSegments + 1) + lon;
                     int second = first + longitudeSegments + 1;
 
-                    facesList.Add(new Polygon(new int[] { first, second, first + 1 }));
-                    facesList.Add(new Polygon(new int[] { second, second + 1, first + 1 }));
+                    facesList.Add(new Polygon(new int[] { first, second, first + 1 }, ShapeColor));
+                    facesList.Add(new Polygon(new int[] { second, second + 1, first + 1 }, ShapeColor));
                 }
             }
 

@@ -10,19 +10,32 @@ namespace src
     public class Camera
     {
         public Vector3 Position { get; set; }
-        public Vector3 Up { get; set; }
-        public Vector3 LookAt { get; set; }
+        public Vector3 Target { get; set; }
+        public Vector3 Up { get; private set; }
+        public float FieldOfView { get; set; }
+        public float AspectRatio { get; set; }
+        public float NearClip { get; set; }
+        public float FarClip { get; set; }
 
-        public Camera(Vector3 position, Vector3 up, Vector3 lookAt)
+        public Camera(Vector3 position, Vector3 target, Vector3 up, float fieldOfView, float aspectRatio, float nearClip, float farClip)
         {
             Position = position;
+            Target = target;
             Up = up;
-            LookAt = lookAt;
+            FieldOfView = fieldOfView;
+            AspectRatio = aspectRatio;
+            NearClip = nearClip;
+            FarClip = farClip;
         }
 
         public Matrix4x4 GetViewMatrix()
         {
-            return Matrix4x4.CreateLookAt(Position, LookAt, Up);
+            return Matrix4x4.CreateLookAt(Position, Target, Up);
+        }
+
+        public Matrix4x4 GetProjectionMatrix()
+        {
+            return Matrix4x4.CreatePerspectiveFieldOfView(FieldOfView, AspectRatio, NearClip, FarClip);
         }
     }
 
@@ -41,8 +54,25 @@ namespace src
         public Renderer(Form mainform, PictureBox pictureBox)
         {
             main_pb = pictureBox;
-            // Initialize camera
-            camera = new Camera(new Vector3(0, 0, -zoom), Vector3.UnitY, Vector3.Zero);
+            // Define initial camera parameters
+            Vector3 initialPosition = new Vector3(0, 0, -zoom);
+            Vector3 initialTarget = Vector3.UnitY;
+            Vector3 initialUp = Vector3.UnitZ;
+            float initialFOV = (float)Math.PI / 4; // 45 degrees
+            float aspectRatio = (float)main_pb.Width / main_pb.Height;
+            float nearClip = 0.1f;
+            float farClip = 1000f;
+
+            // Initialize camera with new parameters
+            camera = new Camera(
+                initialPosition,
+                initialTarget,
+                initialUp,
+                initialFOV,
+                aspectRatio,
+                nearClip,
+                farClip
+            );
 
             renderAlgorithm = ZBufferRendering;
 
@@ -58,26 +88,47 @@ namespace src
             // Update view matrix
             cameraViewMatrix = camera.GetViewMatrix();
 
-            // Create projection matrix
-            projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView((float)Math.PI / 4, (float)main_pb.Width / main_pb.Height, 0.1f, 1000.0f);
+            // Update projection matrix
+            projectionMatrix = camera.GetProjectionMatrix();
+
+            foreach (var shape in Scene.Shapes)
+            {
+                shape.TransformedVertices = new List<Vector3>(shape.Vertices.Count);
+
+                for (int i = 0; i < shape.Vertices.Count; i++)
+                {
+                    // Apply view and projection matrices
+                    var transformed = Vector3.Transform(shape.Vertices[i], cameraViewMatrix);
+                    transformed = Vector3.Transform(transformed, projectionMatrix);
+                    shape.TransformedVertices.Add(transformed);
+                }
+            }
         }
 
         private List<Point> ProjectVertices(List<Vector3> vertices)
         {
             List<Point> projected = new List<Point>();
+
             foreach (var vertex in vertices)
             {
                 var transformed = Vector3.Transform(vertex, cameraViewMatrix);
                 transformed = Vector3.Transform(transformed, projectionMatrix);
 
-                // Perspective division
-                float x = (transformed.X / transformed.Z) * (main_pb.Width / 2) + (main_pb.Width / 2);
-                float y = (transformed.Y / transformed.Z) * (main_pb.Height / 2) + (main_pb.Height / 2);
+                if (transformed.Z != 0)
+                {
+                    float x = (transformed.X / transformed.Z) * (main_pb.Width / 2) + (main_pb.Width / 2);
+                    float y = (transformed.Y / transformed.Z) * (main_pb.Height / 2) + (main_pb.Height / 2);
 
-                int screenX = (int)Clamp(x, 0, main_pb.Width - 1);
-                int screenY = (int)Clamp(y, 0, main_pb.Height - 1);
+                    int screenX = (int)Clamp(x, 0, main_pb.Width - 1);
+                    int screenY = (int)Clamp(y, 0, main_pb.Height - 1);
 
-                projected.Add(new Point(screenX, screenY));
+                    projected.Add(new Point(screenX, screenY));
+                }
+                else
+                {
+                    Console.WriteLine($"Vertex {vertex} has Z=0, skipping projection.");
+                    projected.Add(new Point(0, 0)); // or some default value
+                }
             }
             return projected;
         }
@@ -87,22 +138,71 @@ namespace src
             return Math.Max(min, Math.Min(value, max));
         }
 
+        private float[,] zBuffer;
+
+        private void InitializeZBuffer(int width, int height)
+        {
+            zBuffer = new float[width, height];
+
+            // Initialize Z-buffer with very large values so that every point is beyond the screen
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    zBuffer[x, y] = float.MinValue;
+                }
+            }
+        }
+
+        private void PrintBoundingBox(List<Point> triangleVertices)
+        {
+            var minX = triangleVertices.Min(p => p.X);
+            var minY = triangleVertices.Min(p => p.Y);
+            var maxX = triangleVertices.Max(p => p.X);
+            var maxY = triangleVertices.Max(p => p.Y);
+
+            Console.WriteLine($"Bounding Box: Min: {{X={minX},Y={minY}}} Max: {{X={maxX},Y={maxY}}}");
+        }
+
         private void OnPaint(object sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
             g.Clear(Color.White);
 
+            InitializeZBuffer(main_pb.Width, main_pb.Height);
+
             foreach (var shape in Scene.Shapes)
             {
-                List<Point> projectedVertices = ProjectVertices(shape.Vertices);
-                foreach (var polygon in shape.Polygons)
+                List<Point> projectedVertices = ProjectVertices(shape.TransformedVertices);
+
+                foreach (Polygon polygon in shape.Polygons)
                 {
                     try
                     {
                         Point[] points = polygon.VertexIndices.Select(i => projectedVertices[i]).ToArray();
                         if (points.Length >= 3)
                         {
-                            g.DrawPolygon(Pens.Black, points);
+                            // Break polygon into triangles
+                            List<int[]> triangles = new List<int[]>();
+                            for (int i = 1; i < polygon.VertexIndices.Length - 1; i++)
+                            {
+                                triangles.Add(new int[] { polygon.VertexIndices[0], polygon.VertexIndices[i], polygon.VertexIndices[i + 1] });
+                            }
+
+                            // Process each triangle
+                            foreach (var triangle in triangles)
+                            {
+                                // Extract vertices by indices from triangle
+                                var triangleVertices = new List<Point>
+                            {
+                                projectedVertices[triangle[0]],
+                                projectedVertices[triangle[1]],
+                                projectedVertices[triangle[2]]
+                            };
+
+                                // Fill triangle with Z-buffer consideration
+                                FillTriangleWithZBuffer(triangleVertices, polygon, shape.TransformedVertices, shape.ShapeColor, g);
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -111,6 +211,77 @@ namespace src
                     }
                 }
             }
+        }
+
+        // Function to fill triangle with Z-buffer
+        private void FillTriangleWithZBuffer(List<Point> triangleVertices, Polygon polygon, List<Vector3> originalVertices, Color shapeColor, Graphics g)
+        {
+            // Use bounding box to limit the search area
+            Point min = new Point(triangleVertices.Min(p => p.X), triangleVertices.Min(p => p.Y));
+            Point max = new Point(triangleVertices.Max(p => p.X), triangleVertices.Max(p => p.Y));
+
+            // Iterate over all points inside bounding box
+            for (int x = min.X; x <= max.X; x++)
+            {
+                for (int y = min.Y; y <= max.Y; y++)
+                {
+                    Point currentPoint = new Point(x, y);
+
+                    if (IsPointInTriangle(currentPoint, triangleVertices)) // Check if point is inside the triangle
+                    {
+                        // Compute barycentric coordinates to determine Z
+                        var barycentricCoords = ComputeBarycentricCoordinates(currentPoint, triangleVertices);
+
+                        if (barycentricCoords.Item1 >= 0 && barycentricCoords.Item2 >= 0 && barycentricCoords.Item3 >= 0)
+                        {
+                            // Interpolate Z coordinate from original vertices
+                            float z = barycentricCoords.Item1 * originalVertices[polygon.VertexIndices[0]].Z +
+                                      barycentricCoords.Item2 * originalVertices[polygon.VertexIndices[1]].Z +
+                                      barycentricCoords.Item3 * originalVertices[polygon.VertexIndices[2]].Z;
+
+                            // Check Z-buffer
+                            if (z > zBuffer[x, y])
+                            {
+                                zBuffer[x, y] = z; // Update Z-buffer
+                                                   // Draw pixel considering the shape color
+                                g.FillRectangle(new SolidBrush(shapeColor), x, y, 1, 1);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private bool IsPointInTriangle(Point p, List<Point> triangle)
+        {
+            var (lambda1, lambda2, lambda3) = ComputeBarycentricCoordinates(p, triangle);
+
+            // Точка внутри треугольника, если все барицентрические координаты в пределах от 0 до 1
+            return lambda1 >= 0 && lambda2 >= 0 && lambda3 >= 0 && lambda1 <= 1 && lambda2 <= 1 && lambda3 <= 1;
+        }
+
+        private (float, float, float) ComputeBarycentricCoordinates(Point p, List<Point> triangle)
+        {
+            // Вычисление знаменателя барицентрических координат
+            float denom = (float)((triangle[1].Y - triangle[2].Y) * (triangle[0].X - triangle[2].X) +
+                                   (triangle[2].X - triangle[1].X) * (triangle[0].Y - triangle[2].Y));
+
+            // Если знаменатель очень мал, треугольник вырожден
+            if (Math.Abs(denom) < 1e-5)
+            {
+                return (-1, -1, -1); // Означает, что точка вне треугольника
+            }
+
+            // Вычисление барицентрических координат
+            float lambda1 = ((triangle[1].Y - triangle[2].Y) * (p.X - triangle[2].X) +
+                             (triangle[2].X - triangle[1].X) * (p.Y - triangle[2].Y)) / denom;
+
+            float lambda2 = ((triangle[2].Y - triangle[0].Y) * (p.X - triangle[2].X) +
+                             (triangle[0].X - triangle[2].X) * (p.Y - triangle[2].Y)) / denom;
+
+            float lambda3 = 1.0f - lambda1 - lambda2;
+
+            return (lambda1, lambda2, lambda3);
         }
 
         public void Render(AlgoZbuffer zbuf)
@@ -144,127 +315,48 @@ namespace src
                 }
             }
         }
-
-        private float angleY = 0; // Angle for YZ plane rotation
-        private float angleX = 0; // Angle for XZ plane rotation
-
-        private const float zoomSpeed = 1.0f; // Zoom speed (adjusted for noticeable effect)
-        private const float angleStep = 0.1f; // Angle increment
-
-        private const float TopmostBound = 20.0f;  // Adjust these values as needed
-        private const float BottommostBound = -20.0f;
         private void OnKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.A)
+            float rotationSpeed = 0.05f;
+            float movementSpeed = 0.1f;
+
+            if (e.KeyCode == Keys.A) // Rotate left
             {
-                angleY -= angleStep;
+                float angle = -rotationSpeed;
+                Vector3 direction = camera.Position - camera.Target;
+                Matrix4x4 rotation = Matrix4x4.CreateRotationY(angle);
+                camera.Position = Vector3.Transform(direction, rotation) + camera.Target;
             }
-            if (e.KeyCode == Keys.D)
+            if (e.KeyCode == Keys.D) // Rotate right
             {
-                angleY += angleStep;
+                float angle = rotationSpeed;
+                Vector3 direction = camera.Position - camera.Target;
+                Matrix4x4 rotation = Matrix4x4.CreateRotationY(angle);
+                camera.Position = Vector3.Transform(direction, rotation) + camera.Target;
             }
-            if (e.KeyCode == Keys.W)
+            if (e.KeyCode == Keys.W) // Move forward
             {
-                angleX -= angleStep;
+                Vector3 direction = Vector3.Normalize(camera.Target - camera.Position);
+                camera.Position += direction * movementSpeed;
+                camera.Target += direction * movementSpeed;
             }
-            if (e.KeyCode == Keys.S)
+            if (e.KeyCode == Keys.S) // Move backward
             {
-                angleX += angleStep;
+                Vector3 direction = Vector3.Normalize(camera.Target - camera.Position);
+                camera.Position -= direction * movementSpeed;
+                camera.Target -= direction * movementSpeed;
             }
-            if (e.KeyCode == Keys.Oemplus) // `+` key
+            if (e.KeyCode == Keys.Oemplus) // Zoom in
             {
-                zoom = Math.Max(1.0f, zoom - zoomSpeed);
+                camera.FieldOfView = Math.Max(camera.FieldOfView - 0.1f, 0.1f);
             }
-            if (e.KeyCode == Keys.OemMinus) // `-` key
+            if (e.KeyCode == Keys.OemMinus) // Zoom out
             {
-                zoom += zoomSpeed;
+                camera.FieldOfView = Math.Min(camera.FieldOfView + 0.1f, (float)Math.PI / 2);
             }
 
-            // Update camera position
-            camera.Position = new Vector3(
-                zoom * (float)Math.Cos(angleY) * (float)Math.Cos(angleX),
-                Clamp(zoom * (float)Math.Sin(angleX), BottommostBound, TopmostBound),
-                zoom * (float)Math.Sin(angleY) * (float)Math.Cos(angleX)
-            );
-
-            // Ensure camera always looks at (0,0,0)
-            camera.LookAt = Vector3.Zero;
-
-            // Update view and projection matrices
             UpdateCameraAndProjection();
-
-            // Redraw the scene
             main_pb.Invalidate();
         }
-        /*private void OnKeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.A)
-            {
-                // Rotate around Y-axis
-                angleY -= angleStep;
-            }
-            if (e.KeyCode == Keys.D)
-            {
-                // Rotate around Y-axis
-                angleY += angleStep;
-            }
-
-            if (e.KeyCode == Keys.W)
-            {
-                // Rotate around X-axis
-                angleX -= angleStep;
-                // Clamp camera position within bounds
-                camera.Position = new Vector3(
-                    camera.Position.X,
-                    Clamp(camera.Position.Y, BottommostBound, TopmostBound),
-                    camera.Position.Z
-                );
-            }
-            if (e.KeyCode == Keys.S)
-            {
-                // Rotate around X-axis
-                angleX += angleStep;
-                // Clamp camera position within bounds
-                camera.Position = new Vector3(
-                    camera.Position.X,
-                    Clamp(camera.Position.Y, BottommostBound, TopmostBound),
-                    camera.Position.Z
-                );
-            }
-
-            if (e.KeyCode == Keys.Oemplus) // `+` key
-            {
-                zoom = Math.Max(1.0f, zoom - zoomSpeed); // Zoom in (adjusted minimum zoom)
-                camera.Position = new Vector3(zoom * (float)Math.Cos(angleY), zoom * (float)Math.Sin(angleX), -zoom); // Adjust camera position based on zoom and angles
-            }
-            if (e.KeyCode == Keys.OemMinus) // `-` key
-            {
-                zoom += zoomSpeed; // Zoom out
-                camera.Position = new Vector3(zoom * (float)Math.Cos(angleY), zoom * (float)Math.Sin(angleX), -zoom); // Adjust camera position based on zoom and angles
-            }
-
-            // Update camera position based on angles
-            camera.Position = new Vector3(
-                zoom * (float)Math.Cos(angleY) * (float)Math.Cos(angleX),
-                Clamp(zoom * (float)Math.Sin(angleX), BottommostBound, TopmostBound), // Apply clamping here
-                -zoom * (float)Math.Sin(angleY) * (float)Math.Cos(angleX)
-            );
-
-            // Ensure camera always looks at (0,0,0)
-            camera.LookAt = Vector3.Zero;
-
-            // Apply rotation to the objects based on the camera angles
-            foreach (Shape3D shape in Scene.Shapes)
-            {
-                // Rotate the object based on camera angles
-                shape.TransformShape(angleX, angleY, 0);
-            }
-
-            // Update camera and projection matrices
-            UpdateCameraAndProjection();
-
-            // Redraw the scene
-            main_pb.Invalidate();
-        }*/
     }
 }

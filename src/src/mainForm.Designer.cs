@@ -44,7 +44,6 @@ namespace src
             this.main_pb.Size = new System.Drawing.Size(1084, 937);
             this.main_pb.TabIndex = 1;
             this.main_pb.TabStop = false;
-            this.main_pb.Click += new System.EventHandler(this.pictureBox1_Click);
             // 
             // mainForm
             // 

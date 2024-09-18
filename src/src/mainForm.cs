@@ -16,9 +16,9 @@ namespace src
         {
             InitializeComponent();
                 
-            Scene.AddShape(new Cube3D(2.0f, new Vector3(0, 0, 0)));
-            Scene.AddShape(new Sphere3D(16, 16, new Vector3(0, 0, 10)));
-            Scene.AddShape(new RectangularPrism3D(20, 2, 20, new Vector3(0, -1, 0)));
+            Scene.AddShape(new Cube3D(1.0f, new Vector3(0, 0, 0), Color.Red));
+            Scene.AddShape(new Sphere3D(16, 16, new Vector3(0, 0, -10), Color.Blue));
+            Scene.AddShape(new RectangularPrism3D(20, 2, 20, new Vector3(0, -1, 0), Color.Gray));
             renderer = new Renderer(this, main_pb);  // Инициализируем рендерер
             SetSun(); // Устанавливаем освещение
             HandleSceneChange(); // Обрабатываем изменение сцены
@@ -40,16 +40,6 @@ namespace src
             Scene.TransformShapes(tetax, tetay, tetaz);
             zbuf = new AlgoZbuffer(main_pb.Size, currentSun);
             renderer.Render(zbuf);
-        }
-
-        private void pictureBox1_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void renderer_Click(object sender, EventArgs e)
-        {
-
         }
     }
 }
