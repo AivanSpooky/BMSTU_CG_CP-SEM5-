@@ -41,5 +41,28 @@ namespace src
                 shape.Transform(rotationMatrix);
             }
         }
+        public static void TranslateShapes(int dx, int dy, int dz)
+        {
+            // Create translation matrix
+            Matrix4x4 translationMatrix = Matrix4x4.CreateTranslation(dx, dy, dz);
+
+            // Apply the translation matrix to each shape
+            foreach (var shape in Shapes)
+            {
+                shape.Transform(translationMatrix);
+            }
+        }
+
+        public static void RotateShapesInXZPlane(float angle)
+        {
+            // Создаем матрицу вращения вокруг оси Y (поворот в плоскости XZ)
+            Matrix4x4 rotationMatrix = Matrix4x4.CreateRotationY(angle);
+
+            // Применяем матрицу вращения к каждой форме в сцене
+            foreach (var shape in Shapes)
+            {
+                shape.Transform(rotationMatrix);
+            }
+        }
     }
 }

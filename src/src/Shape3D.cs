@@ -97,7 +97,7 @@ namespace src
     {
         public float Size { get; private set; }
 
-        public Cube3D(float size, Vector3 position, Color color) : base(position, color) // Pass color to base constructor
+        public Cube3D(float size, Vector3 position, Color color) : base(position, color)
         {
             Size = size;
             GenerateShape();
@@ -109,25 +109,37 @@ namespace src
             // Генерация вершин куба
             Vertices.AddRange(new Vector3[]
             {
-                new Vector3(-Size / 2, -Size / 2, -Size / 2),
-                new Vector3(Size / 2, -Size / 2, -Size / 2),
-                new Vector3(Size / 2, Size / 2, -Size / 2),
-                new Vector3(-Size / 2, Size / 2, -Size / 2),
-                new Vector3(-Size / 2, -Size / 2, Size / 2),
-                new Vector3(Size / 2, -Size / 2, Size / 2),
-                new Vector3(Size / 2, Size / 2, Size / 2),
-                new Vector3(-Size / 2, Size / 2, Size / 2)
+            new Vector3(-Size / 2, -Size / 2, -Size / 2),
+            new Vector3(Size / 2, -Size / 2, -Size / 2),
+            new Vector3(Size / 2, Size / 2, -Size / 2),
+            new Vector3(-Size / 2, Size / 2, -Size / 2),
+            new Vector3(-Size / 2, -Size / 2, Size / 2),
+            new Vector3(Size / 2, -Size / 2, Size / 2),
+            new Vector3(Size / 2, Size / 2, Size / 2),
+            new Vector3(-Size / 2, Size / 2, Size / 2)
             });
 
-            // Генерация полигонов куба (6 граней)
-            Polygons.Add(new Polygon(new int[] { 0, 1, 2, 3 }, ShapeColor)); // Задняя грань
-            Polygons.Add(new Polygon(new int[] { 4, 5, 6, 7 }, ShapeColor)); // Передняя грань
-            Polygons.Add(new Polygon(new int[] { 0, 1, 5, 4 }, ShapeColor)); // Нижняя грань
-            Polygons.Add(new Polygon(new int[] { 2, 3, 7, 6 }, ShapeColor)); // Верхняя грань
-            Polygons.Add(new Polygon(new int[] { 0, 3, 7, 4 }, ShapeColor)); // Левая грань
-            Polygons.Add(new Polygon(new int[] { 1, 2, 6, 5 }, ShapeColor)); // Правая грань
+            // Разделение каждой грани на два треугольника
+            Polygons.Add(new Polygon(new int[] { 0, 1, 2 }, ShapeColor)); // Задняя грань (треугольник 1)
+            Polygons.Add(new Polygon(new int[] { 2, 3, 0 }, ShapeColor)); // Задняя грань (треугольник 2)
+
+            Polygons.Add(new Polygon(new int[] { 4, 5, 6 }, ShapeColor)); // Передняя грань (треугольник 1)
+            Polygons.Add(new Polygon(new int[] { 6, 7, 4 }, ShapeColor)); // Передняя грань (треугольник 2)
+
+            Polygons.Add(new Polygon(new int[] { 0, 1, 5 }, ShapeColor)); // Нижняя грань (треугольник 1)
+            Polygons.Add(new Polygon(new int[] { 5, 4, 0 }, ShapeColor)); // Нижняя грань (треугольник 2)
+
+            Polygons.Add(new Polygon(new int[] { 2, 3, 7 }, ShapeColor)); // Верхняя грань (треугольник 1)
+            Polygons.Add(new Polygon(new int[] { 7, 6, 2 }, ShapeColor)); // Верхняя грань (треугольник 2)
+
+            Polygons.Add(new Polygon(new int[] { 0, 3, 7 }, ShapeColor)); // Левая грань (треугольник 1)
+            Polygons.Add(new Polygon(new int[] { 7, 4, 0 }, ShapeColor)); // Левая грань (треугольник 2)
+
+            Polygons.Add(new Polygon(new int[] { 1, 2, 6 }, ShapeColor)); // Правая грань (треугольник 1)
+            Polygons.Add(new Polygon(new int[] { 6, 5, 1 }, ShapeColor)); // Правая грань (треугольник 2)
         }
     }
+
 
     public class RectangularPrism3D : Shape3D
     {
@@ -135,7 +147,8 @@ namespace src
         public float Height { get; private set; }
         public float Depth { get; private set; }
 
-        public RectangularPrism3D(float width, float height, float depth, Vector3 center, Color color) : base(center, color)
+        public RectangularPrism3D(float width, float height, float depth, Vector3 center, Color color)
+            : base(center, color)
         {
             Width = width;
             Height = height;
@@ -154,25 +167,37 @@ namespace src
             // Generate vertices
             Vertices.AddRange(new Vector3[]
             {
-                new Vector3(-halfWidth, -halfHeight, -halfDepth),
-                new Vector3(halfWidth, -halfHeight, -halfDepth),
-                new Vector3(halfWidth, halfHeight, -halfDepth),
-                new Vector3(-halfWidth, halfHeight, -halfDepth),
-                new Vector3(-halfWidth, -halfHeight, halfDepth),
-                new Vector3(halfWidth, -halfHeight, halfDepth),
-                new Vector3(halfWidth, halfHeight, halfDepth),
-                new Vector3(-halfWidth, halfHeight, halfDepth)
+            new Vector3(-halfWidth, -halfHeight, -halfDepth),
+            new Vector3(halfWidth, -halfHeight, -halfDepth),
+            new Vector3(halfWidth, halfHeight, -halfDepth),
+            new Vector3(-halfWidth, halfHeight, -halfDepth),
+            new Vector3(-halfWidth, -halfHeight, halfDepth),
+            new Vector3(halfWidth, -halfHeight, halfDepth),
+            new Vector3(halfWidth, halfHeight, halfDepth),
+            new Vector3(-halfWidth, halfHeight, halfDepth)
             });
 
-            // Generate polygons (12 triangles, 6 faces)
-            Polygons.Add(new Polygon(new int[] { 0, 1, 2, 3 }, ShapeColor)); // Back face
-            Polygons.Add(new Polygon(new int[] { 4, 5, 6, 7 }, ShapeColor)); // Front face
-            Polygons.Add(new Polygon(new int[] { 0, 1, 5, 4 }, ShapeColor)); // Bottom face
-            Polygons.Add(new Polygon(new int[] { 2, 3, 7, 6 }, ShapeColor)); // Top face
-            Polygons.Add(new Polygon(new int[] { 0, 3, 7, 4 }, ShapeColor)); // Left face
-            Polygons.Add(new Polygon(new int[] { 1, 2, 6, 5 }, ShapeColor)); // Right face
+            // Разделение каждой грани на два треугольника
+            Polygons.Add(new Polygon(new int[] { 0, 1, 2 }, ShapeColor)); // Задняя грань (треугольник 1)
+            Polygons.Add(new Polygon(new int[] { 2, 3, 0 }, ShapeColor)); // Задняя грань (треугольник 2)
+
+            Polygons.Add(new Polygon(new int[] { 4, 5, 6 }, ShapeColor)); // Передняя грань (треугольник 1)
+            Polygons.Add(new Polygon(new int[] { 6, 7, 4 }, ShapeColor)); // Передняя грань (треугольник 2)
+
+            Polygons.Add(new Polygon(new int[] { 0, 1, 5 }, ShapeColor)); // Нижняя грань (треугольник 1)
+            Polygons.Add(new Polygon(new int[] { 5, 4, 0 }, ShapeColor)); // Нижняя грань (треугольник 2)
+
+            Polygons.Add(new Polygon(new int[] { 2, 3, 7 }, ShapeColor)); // Верхняя грань (треугольник 1)
+            Polygons.Add(new Polygon(new int[] { 7, 6, 2 }, ShapeColor)); // Верхняя грань (треугольник 2)
+
+            Polygons.Add(new Polygon(new int[] { 0, 3, 7 }, ShapeColor)); // Левая грань (треугольник 1)
+            Polygons.Add(new Polygon(new int[] { 7, 4, 0 }, ShapeColor)); // Левая грань (треугольник 2)
+
+            Polygons.Add(new Polygon(new int[] { 1, 2, 6 }, ShapeColor)); // Правая грань (треугольник 1)
+            Polygons.Add(new Polygon(new int[] { 6, 5, 1 }, ShapeColor)); // Правая грань (треугольник 2)
         }
     }
+
 
     // Класс для сферы, наследуется от Shape3D
     public class Sphere3D : Shape3D

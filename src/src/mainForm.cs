@@ -9,20 +9,41 @@ namespace src
     {
         private Renderer renderer;  // Создаем объект рендерера
         private LightSource sun1, sun2, sun3, sun4, sun5, currentSun;
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            Scene.RotateShapesInXZPlane(10 * (float)Math.PI/180);
+            main_pb.Focus();
+            renderer.UpdateCameraAndProjection();
+            main_pb.Invalidate();
+        }
+
         private AlgoZbuffer zbuf;
         private double tetax, tetay, tetaz;
 
         public mainForm()
         {
             InitializeComponent();
-                
+            this.KeyPreview = true;  // Разрешаем обработку событий клавиатуры для всей формы
+            this.KeyDown += new KeyEventHandler(OnKeyDownHandler);
+
             Scene.AddShape(new Cube3D(8.0f, new Vector3(0, 0, 0), Color.Red));
+            Scene.AddShape(new Cube3D(4.0f, new Vector3(5, 0, 0), Color.Brown));
             Scene.AddShape(new Sphere3D(16, 16, new Vector3(0, 0, 10), Color.Blue));
             Scene.AddShape(new Sphere3D(16, 16, new Vector3(0, 0, -10), Color.Green));
             Scene.AddShape(new RectangularPrism3D(20, 2, 20, new Vector3(0, 4, 0), Color.Gray));
             renderer = new Renderer(this, main_pb);  // Инициализируем рендерер
             SetSun(); // Устанавливаем освещение
             HandleSceneChange(); // Обрабатываем изменение сцены
+        }
+
+        private void OnKeyDownHandler(object sender, KeyEventArgs e)
+        {
+            // Проверяем, если фокус на PictureBox или любой контрол
+            if (main_pb.Focused)
+            {
+                renderer.OnKeyDown(sender, e);
+            }
         }
 
         private void SetSun()

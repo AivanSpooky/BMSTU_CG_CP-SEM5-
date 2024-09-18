@@ -58,7 +58,7 @@ namespace src
             Vector3 initialPosition = new Vector3(0, 10, -zoom);
             Vector3 initialTarget = Vector3.UnitY;
             Vector3 initialUp = Vector3.UnitZ;
-            float initialFOV = (float)Math.PI / 4; // 45 degrees
+            float initialFOV = (float)Math.PI / 2; // 45 degrees
             float aspectRatio = (float)main_pb.Width / main_pb.Height;
             float nearClip = 0.1f;
             float farClip = 1000f;
@@ -83,7 +83,7 @@ namespace src
             main_pb.Paint += new PaintEventHandler(OnPaint);
         }
 
-        private void UpdateCameraAndProjection()
+        public void UpdateCameraAndProjection()
         {
             // Update view matrix
             cameraViewMatrix = camera.GetViewMatrix();
@@ -305,10 +305,10 @@ namespace src
                 }
             }
         }
-        private void OnKeyDown(object sender, KeyEventArgs e)
+        public void OnKeyDown(object sender, KeyEventArgs e)
         {
             float rotationSpeed = 0.05f;
-            float movementSpeed = 0.1f;
+            float movementSpeed = 0.5f;
 
             if (e.KeyCode == Keys.A) // Rotate left
             {
@@ -324,17 +324,13 @@ namespace src
                 Matrix4x4 rotation = Matrix4x4.CreateRotationY(angle);
                 camera.Position = Vector3.Transform(direction, rotation) + camera.Target;
             }
-            if (e.KeyCode == Keys.W) // Move forward
+            if (e.KeyCode == Keys.W) // Move target up (increase Y)
             {
-                Vector3 direction = Vector3.Normalize(camera.Target - camera.Position);
-                camera.Position += direction * movementSpeed;
-                camera.Target += direction * movementSpeed;
+                camera.Target = new Vector3(camera.Target.X, camera.Target.Y + movementSpeed, camera.Target.Z);
             }
-            if (e.KeyCode == Keys.S) // Move backward
+            if (e.KeyCode == Keys.S) // Move target down (decrease Y)
             {
-                Vector3 direction = Vector3.Normalize(camera.Target - camera.Position);
-                camera.Position -= direction * movementSpeed;
-                camera.Target -= direction * movementSpeed;
+                camera.Target = new Vector3(camera.Target.X, camera.Target.Y - movementSpeed, camera.Target.Z);
             }
             if (e.KeyCode == Keys.Oemplus) // Zoom in
             {
