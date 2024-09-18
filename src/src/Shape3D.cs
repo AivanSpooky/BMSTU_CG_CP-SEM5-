@@ -5,7 +5,7 @@ using System.Numerics;
 
 namespace src
 {
-    public class Polygon
+    /*public class Polygon
     {
         public int[] VertexIndices { get; private set; }
 
@@ -27,7 +27,7 @@ namespace src
 
             return normal;
         }
-    }
+    }*/
 
     public abstract class Shape3D
     {
@@ -58,6 +58,46 @@ namespace src
             {
                 Vertices[i] += Position;
             }
+        }
+
+        public void TransformShape(double tetax, double tetay, double tetaz)
+        {
+            // Преобразование углов из градусов в радианы
+            tetax = tetax * Math.PI / 180;
+            tetay = tetay * Math.PI / 180;
+            tetaz = tetaz * Math.PI / 180;
+
+            // Вычисление косинусов и синусов для каждой оси
+            double cosTetX = Math.Cos(tetax), sinTetX = Math.Sin(tetax);
+            double cosTetY = Math.Cos(tetay), sinTetY = Math.Sin(tetay);
+            double cosTetZ = Math.Cos(tetaz), sinTetZ = Math.Sin(tetaz);
+
+            // Преобразование каждой вершины
+            for (int i = 0; i < Vertices.Count; i++)
+            {
+                var v = Vertices[i];
+                // Выполнение поворотов вокруг каждой оси
+                Transformation.Transform(ref v.X, ref v.Y, ref v.Z, cosTetX, sinTetX, cosTetY, sinTetY, cosTetZ, sinTetZ);
+                Vertices[i] = v;
+            }
+        }
+
+
+        public Shape3D GetTurnedShape(double tetax, double tetay, double tetaz)
+        {
+            // Создание копии текущей фигуры
+            Shape3D turnedShape = (Shape3D)this.MemberwiseClone();
+
+            // Копирование вершин
+            turnedShape.Vertices = new List<Vector3>(Vertices);
+
+            // Применение поворота
+            turnedShape.TransformShape(tetax, tetay, tetaz);
+
+            // Копирование полигонов
+            turnedShape.Polygons = new List<Polygon>(Polygons);
+
+            return turnedShape;
         }
 
         // Абстрактный метод для генерации вершин и полигонов фигуры

@@ -67,15 +67,13 @@ namespace src
             List<Point> projected = new List<Point>();
             foreach (var vertex in vertices)
             {
-                // Apply transformations to the vertex
                 var transformed = Vector3.Transform(vertex, cameraViewMatrix);
                 transformed = Vector3.Transform(transformed, projectionMatrix);
 
-                // Handle perspective division
+                // Perspective division
                 float x = (transformed.X / transformed.Z) * (main_pb.Width / 2) + (main_pb.Width / 2);
                 float y = (transformed.Y / transformed.Z) * (main_pb.Height / 2) + (main_pb.Height / 2);
 
-                // Clamp values to screen bounds
                 int screenX = (int)Clamp(x, 0, main_pb.Width - 1);
                 int screenY = (int)Clamp(y, 0, main_pb.Height - 1);
 
@@ -115,6 +113,26 @@ namespace src
             }
         }
 
+        public void Render(AlgoZbuffer zbuf)
+        {
+            // Clear previous render
+            main_pb.Image = new Bitmap(main_pb.Width, main_pb.Height);
+            using (Graphics g = Graphics.FromImage(main_pb.Image))
+            {
+                // Render each shape
+                foreach (var shape in Scene.Shapes)
+                {
+                    // Project vertices of the shape
+                    List<Point> projectedVertices = ProjectVertices(shape.Vertices);
+
+                    // Draw the shape using Z-buffer algorithm
+                    zbuf.RenderShape(g, projectedVertices, shape.Polygons);
+                }
+
+                // Optional: Draw additional elements like UI overlays, etc.
+            }
+        }
+
         private void ZBufferRendering(Graphics g, List<Point> projectedVertices, int[][] faces)
         {
             foreach (var face in faces)
@@ -135,8 +153,50 @@ namespace src
 
         private const float TopmostBound = 20.0f;  // Adjust these values as needed
         private const float BottommostBound = -20.0f;
-
         private void OnKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.A)
+            {
+                angleY -= angleStep;
+            }
+            if (e.KeyCode == Keys.D)
+            {
+                angleY += angleStep;
+            }
+            if (e.KeyCode == Keys.W)
+            {
+                angleX -= angleStep;
+            }
+            if (e.KeyCode == Keys.S)
+            {
+                angleX += angleStep;
+            }
+            if (e.KeyCode == Keys.Oemplus) // `+` key
+            {
+                zoom = Math.Max(1.0f, zoom - zoomSpeed);
+            }
+            if (e.KeyCode == Keys.OemMinus) // `-` key
+            {
+                zoom += zoomSpeed;
+            }
+
+            // Update camera position
+            camera.Position = new Vector3(
+                zoom * (float)Math.Cos(angleY) * (float)Math.Cos(angleX),
+                Clamp(zoom * (float)Math.Sin(angleX), BottommostBound, TopmostBound),
+                zoom * (float)Math.Sin(angleY) * (float)Math.Cos(angleX)
+            );
+
+            // Ensure camera always looks at (0,0,0)
+            camera.LookAt = Vector3.Zero;
+
+            // Update view and projection matrices
+            UpdateCameraAndProjection();
+
+            // Redraw the scene
+            main_pb.Invalidate();
+        }
+        /*private void OnKeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.A)
             {
@@ -193,11 +253,18 @@ namespace src
             // Ensure camera always looks at (0,0,0)
             camera.LookAt = Vector3.Zero;
 
+            // Apply rotation to the objects based on the camera angles
+            foreach (Shape3D shape in Scene.Shapes)
+            {
+                // Rotate the object based on camera angles
+                shape.TransformShape(angleX, angleY, 0);
+            }
+
             // Update camera and projection matrices
             UpdateCameraAndProjection();
 
             // Redraw the scene
             main_pb.Invalidate();
-        }
+        }*/
     }
 }
