@@ -44,7 +44,7 @@ namespace src
         private Matrix4x4 cameraViewMatrix;
         private Matrix4x4 projectionMatrix;
         private Camera camera;
-        private float zoom = 10.0f; // Initial zoom level
+        private float zoom = 100.0f; // Initial zoom level
 
         private PictureBox main_pb;
         private RenderAlgorithm renderAlgorithm;
@@ -55,7 +55,7 @@ namespace src
         {
             main_pb = pictureBox;
             // Define initial camera parameters
-            Vector3 initialPosition = new Vector3(0, 0, -zoom);
+            Vector3 initialPosition = new Vector3(0, 10, -zoom);
             Vector3 initialTarget = Vector3.UnitY;
             Vector3 initialUp = Vector3.UnitZ;
             float initialFOV = (float)Math.PI / 4; // 45 degrees
@@ -152,16 +152,6 @@ namespace src
                     zBuffer[x, y] = float.MinValue;
                 }
             }
-        }
-
-        private void PrintBoundingBox(List<Point> triangleVertices)
-        {
-            var minX = triangleVertices.Min(p => p.X);
-            var minY = triangleVertices.Min(p => p.Y);
-            var maxX = triangleVertices.Max(p => p.X);
-            var maxY = triangleVertices.Max(p => p.Y);
-
-            Console.WriteLine($"Bounding Box: Min: {{X={minX},Y={minY}}} Max: {{X={maxX},Y={maxY}}}");
         }
 
         private void OnPaint(object sender, PaintEventArgs e)

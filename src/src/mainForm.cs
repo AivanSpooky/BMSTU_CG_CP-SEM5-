@@ -16,9 +16,10 @@ namespace src
         {
             InitializeComponent();
                 
-            Scene.AddShape(new Cube3D(1.0f, new Vector3(0, 0, 0), Color.Red));
-            Scene.AddShape(new Sphere3D(16, 16, new Vector3(0, 0, -10), Color.Blue));
-            Scene.AddShape(new RectangularPrism3D(20, 2, 20, new Vector3(0, -1, 0), Color.Gray));
+            Scene.AddShape(new Cube3D(8.0f, new Vector3(0, 0, 0), Color.Red));
+            Scene.AddShape(new Sphere3D(16, 16, new Vector3(0, 0, 10), Color.Blue));
+            Scene.AddShape(new Sphere3D(16, 16, new Vector3(0, 0, -10), Color.Green));
+            Scene.AddShape(new RectangularPrism3D(20, 2, 20, new Vector3(0, 4, 0), Color.Gray));
             renderer = new Renderer(this, main_pb);  // Инициализируем рендерер
             SetSun(); // Устанавливаем освещение
             HandleSceneChange(); // Обрабатываем изменение сцены

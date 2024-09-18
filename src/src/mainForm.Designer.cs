@@ -34,14 +34,12 @@ namespace src
             ((System.ComponentModel.ISupportInitialize)(this.main_pb)).BeginInit();
             this.SuspendLayout();
             // 
-            // renderer
-            // 
             // main_pb
             // 
             this.main_pb.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.main_pb.Location = new System.Drawing.Point(12, 12);
             this.main_pb.Name = "main_pb";
-            this.main_pb.Size = new System.Drawing.Size(1084, 937);
+            this.main_pb.Size = new System.Drawing.Size(1557, 1017);
             this.main_pb.TabIndex = 1;
             this.main_pb.TabStop = false;
             // 
@@ -49,7 +47,7 @@ namespace src
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1584, 961);
+            this.ClientSize = new System.Drawing.Size(1904, 1041);
             this.Controls.Add(this.main_pb);
             this.Name = "mainForm";
             this.Text = "Курсовая работа";
