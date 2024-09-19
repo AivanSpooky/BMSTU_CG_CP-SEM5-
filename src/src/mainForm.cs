@@ -8,12 +8,17 @@ namespace src
     public partial class mainForm : Form
     {
         private Renderer renderer;  // Создаем объект рендерера
-        private LightSource sun1, sun2, sun3, sun4, sun5, currentSun;
+        private LightSource sun1, sun2, sun3, sun4, sun5;
+        public LightSource currentSun;
+        public bool chromatic = false;
+        public bool vignette = false;
 
         private void button1_Click(object sender, EventArgs e)
         {
             Scene.RotateShapesInXZPlane(10 * (float)Math.PI/180);
             main_pb.Focus();
+            Bitmap bitmap = new Bitmap(main_pb.Width, main_pb.Height);
+            main_pb.Image = bitmap;
             renderer.UpdateCameraAndProjection();
             main_pb.Invalidate();
         }
@@ -21,13 +26,46 @@ namespace src
         private AlgoZbuffer zbuf;
         private double tetax, tetay, tetaz;
 
+        private void btn_chromatic_Click(object sender, EventArgs e)
+        {
+            main_pb.Focus();
+
+            chromatic = true;
+            Bitmap bitmap = new Bitmap(main_pb.Width, main_pb.Height);
+            main_pb.Image = bitmap;
+            renderer.UpdateCameraAndProjection();
+            main_pb.Invalidate();
+        }
+
+        private void btn_vignette_Click(object sender, EventArgs e)
+        {
+            main_pb.Focus();
+
+            vignette = true;
+            Bitmap bitmap = new Bitmap(main_pb.Width, main_pb.Height);
+            main_pb.Image = bitmap;
+            renderer.UpdateCameraAndProjection();
+            main_pb.Invalidate();
+        }
+
+        /*private void button2_Click(object sender, EventArgs e)
+        {
+            main_pb.Focus();
+
+            chromatic = true;
+            Bitmap bitmap = new Bitmap(main_pb.Width, main_pb.Height);
+            main_pb.Image = bitmap;
+            renderer.UpdateCameraAndProjection();
+            main_pb.Invalidate();
+        }*/
+
         public mainForm()
         {
             InitializeComponent();
             this.KeyPreview = true;  // Разрешаем обработку событий клавиатуры для всей формы
             this.KeyDown += new KeyEventHandler(OnKeyDownHandler);
 
-            Scene.AddShape(new Cube3D(8.0f, new Vector3(0, 0, 0), Color.Red));
+            Scene.AddShape(new Cube3D(8.0f, new Vector3(0, 4, 0), Color.Red));
             Scene.AddShape(new Cube3D(4.0f, new Vector3(5, 0, 0), Color.Brown));
             Scene.AddShape(new Sphere3D(16, 16, new Vector3(0, 0, 10), Color.Blue));
             Scene.AddShape(new Sphere3D(16, 16, new Vector3(0, 0, -10), Color.Green));
@@ -59,9 +97,7 @@ namespace src
         private void HandleSceneChange()
         {
             // Применяем трансформацию и обновляем буфер
-            Scene.TransformShapes(tetax, tetay, tetaz);
-            zbuf = new AlgoZbuffer(main_pb.Size, currentSun);
-            renderer.Render(zbuf);
+            
         }
     }
 }
