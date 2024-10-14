@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // Общие сведения об этой сборке предоставляются следующим набором
 // набора атрибутов. Измените значения этих атрибутов для изменения сведений,
 // связанных со сборкой.
-[assembly: AssemblyTitle("src")]
+[assembly: AssemblyTitle("test")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HP")]
-[assembly: AssemblyProduct("src")]
+[assembly: AssemblyProduct("test")]
 [assembly: AssemblyCopyright("Copyright © HP 2024")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // Следующий GUID служит для идентификации библиотеки типов, если этот проект будет видимым для COM
-[assembly: Guid("81bf4086-93f3-441f-bb2d-488a67710888")]
+[assembly: Guid("88486f27-6319-4f0f-870d-78b3b48611a1")]
 
 // Сведения о версии сборки состоят из указанных ниже четырех значений:
 //
