@@ -11,13 +11,14 @@ namespace test
     }
     public enum IndentationType
     {
-        Sphere,
-        Cube
+        Sphere = 1,
+        Cube = 2
     }
 
     public enum FigureType
     {
-        Sphere,
-        Cube
+        Default = 0,
+        Sphere = 1,
+        Cube = 2
     }
 }

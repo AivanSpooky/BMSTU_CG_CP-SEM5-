@@ -17,12 +17,14 @@ namespace test
         public Vector3 Position { get; set; }
         public Quaternion Rotation { get; set; }
         public Color Color { get; set; }
+        public FigureType Type { get; set; }
 
         public int GridWidth { get; private set; }
         public int GridDepth { get; private set; }
 
         public Mesh(string name, Color color)
         {
+            Type = FigureType.Default;
             Name = name;
             Color = color;
             Vertices = new List<Vertex>();
@@ -36,6 +38,7 @@ namespace test
         public static Mesh CreateCube(Vector3 position, float size, Color color)
         {
             Mesh mesh = new Mesh("Cube", color);
+            mesh.Type = FigureType.Cube;
             mesh.Position = position;
 
             float half = size / 2;
@@ -183,6 +186,7 @@ namespace test
         public static Mesh CreateSphere(Vector3 position, float radius, int latitudeSegments, int longitudeSegments, Color color, float minTheta = 0f, float maxTheta = (float)Math.PI)
         {
             Mesh mesh = new Mesh("Sphere", color);
+            mesh.Type = FigureType.Sphere;
             mesh.Position = position;
 
             for (int lat = 0; lat <= latitudeSegments; lat++)

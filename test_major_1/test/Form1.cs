@@ -3,6 +3,7 @@ using System.Numerics;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
+using System.Linq;
 
 namespace test
 {
@@ -15,6 +16,8 @@ namespace test
         Light light;
         Timer timer;
         float angle = 0;
+        private bool focus = true;
+        private bool isMessageBoxShown = false;
 
         // Переменные для управления камерой
         private bool movingForward = false;
@@ -28,7 +31,7 @@ namespace test
         private float cameraSpeed = 1f;
         private float rotationSpeed = 0.15f;
         // === DEBUG TOOLS ===
-        private bool debug_mode = true;
+        private bool debug_mode = false;
         private bool debug_identation = false;
         private bool useGouraudShading = true;
 
@@ -37,19 +40,17 @@ namespace test
         int gridDepth = 20; // количество клеток по Z
         float cellSize = 0.25f; // размер каждой клетки
 
+        // === SIMULATION ===
+        // Флаг для управления симуляцией
+        private bool isSimulationRunning = false;
+        // Скорость падения фигур
+        private float fallSpeed = 0.4f;
+
         // Карта занятых клеток
         bool[,] gridOccupied;
-
         // Список лунок
         List<Indentation> indentations;
         private List<(Vector3 Start, Vector3 End)> indentationEdges = new List<(Vector3 Start, Vector3 End)>();
-
-        public static float Clamp(float value, float min, float max)
-        {
-            if (value < min) return min;
-            if (value > max) return max;
-            return value;
-        }
 
         public Form1()
         {
@@ -89,8 +90,8 @@ namespace test
 
             #region "meshes"
             // Добавление красного куба new Vector3(1f-0.1f, -0.5f, 1f-0.1f)
-            Mesh cube = Mesh.CreateCube(new Vector3(1f-0.1f, 20f, 1f-0.1f), 1, Color.Red);
-            cube.Name = "Cube";
+            Mesh cube = Mesh.CreateCube(new Vector3(1f-0.1f, 10f, 1f-0.1f), 1, Color.Red);
+            cube.Name = "«Красный куб»";
             scene.AddObject(cube);
 
             /*cube = Mesh.CreateCube(new Vector3(6f, -1f, 7.5f), 2f, Color.Brown);
@@ -104,8 +105,8 @@ namespace test
             scene.AddObject(cube1);
             cube1.Rotation *= Quaternion.CreateFromAxisAngle(Vector3.UnitY, 4f);*/
 
-            Mesh sphere = Mesh.CreateSphere(new Vector3(2.5f, 0f, 2.5f), 0.5f, 10, 10, Color.Yellow);
-            sphere.Name = "Sphere";
+            Mesh sphere = Mesh.CreateSphere(new Vector3(2.5f, 2f, 2.5f), 0.5f, 10, 10, Color.Yellow);
+            sphere.Name = "«Желтая сфера»";
             scene.AddObject(sphere);
 
             /*sphere = Mesh.CreateSphere(new Vector3(6, 0.5f, 8.7f), 0.4f, 10, 10, Color.AliceBlue);
@@ -116,11 +117,8 @@ namespace test
             sphere.Name = "Sphere";
             scene.AddObject(sphere);*/
             #endregion
-
             #region "light"
-            // Установка источника света
-            light = new Light(new Vector3(1, -0.5f, 1f));
-            // Add the light sphere if debug mode is enabled
+            light = new Light(new Vector3(1, 1f, 2f));
             if (debug_mode)
             {
                 Mesh lightSphere = Mesh.CreateSphere(light.Position, 0.1f, 10, 10, Color.Purple);
@@ -128,7 +126,6 @@ namespace test
                 scene.AddObject(lightSphere);
             }
             #endregion
-
             #region "camera"
             camera = new Camera(
                 new Vector3(0, 9f, 15),   // Camera position
@@ -136,7 +133,6 @@ namespace test
                 new Vector3(0, 1, 0)   // Up vector
             );
             #endregion
-
             #region "timer"
             // Таймер для анимации
             timer = new Timer();
@@ -144,15 +140,16 @@ namespace test
             timer.Tick += Timer_Tick;
             timer.Start();
             #endregion
-
-            #region "picturebox sets"
-            // Настройка обработки клавиатуры
-            this.KeyDown += Form1_KeyDown;
-            this.KeyUp += Form1_KeyUp;
-            this.Focus(); // Устанавливаем фокус на форму для получения событий клавиатуры
+            #region "picturebox keyboard set"
+            focusForm();
             #endregion
         }
-
+        private void focusForm()
+        {
+            focus_panel.PreviewKeyDown += FocusPanel_PreviewKeyDown;
+            this.KeyPreview = true;
+            focus_panel.Focus();
+        }
         private void AddIndentation(int gridX, int gridZ, int width, int depth, IndentationType type)
         {
             // Проверка, что клетки не заняты
@@ -186,10 +183,72 @@ namespace test
         private void Timer_Tick(object sender, EventArgs e)
         {
             angle += 0.01f;
-            foreach (var mesh in scene.Meshes)
-                if (mesh.Name == "Cube")
-                    mesh.Position -= new Vector3(0, 0.05f, 0);
-            /*light.Position.Z -= 1f;*/
+
+            if (isSimulationRunning)
+            {
+                List<Mesh> meshesToRemove = new List<Mesh>();
+                List<Indentation> indentationsToRemove = new List<Indentation>();
+
+                // Используем копию списка Meshes для итерации
+                var meshesCopy = scene.Meshes.ToList();
+
+                foreach (var mesh in meshesCopy)
+                {
+                    if (mesh.Type != FigureType.Default)
+                    {
+                        // Обновляем позицию фигуры
+                        mesh.Position -= new Vector3(0, fallSpeed, 0);
+
+                        // Проверяем столкновение с площадкой
+                        if (mesh.Position.Y <= 0)
+                        {
+                            // Проверяем попадание в лунку
+                            if (CheckFigureCollision(mesh, meshesToRemove, indentationsToRemove))
+                            {
+                                // Если фигура обработана, удаляем её из списка на дальнейшую обработку
+                                meshesToRemove.Add(mesh);
+                            }
+                        }
+                    }
+                }
+
+                // Удаляем фигуры из сцены
+                foreach (var mesh in meshesToRemove)
+                {
+                    scene.RemoveObjectByName(mesh.Name);
+                }
+
+                // Удаляем лунки и обновляем площадку
+                if (indentationsToRemove.Any())
+                {
+                    foreach (var indentation in indentationsToRemove)
+                    {
+                        indentations.Remove(indentation);
+                    }
+
+                    // Обновляем площадку
+                    scene.RemoveObjectByName("Ground");
+                    Mesh ground = Mesh.CreateGridPlane(
+                        new Vector3(0, 0, 0),
+                        gridWidth,
+                        gridDepth,
+                        cellSize,
+                        Color.Green,
+                        indentations,
+                        indentationEdges
+                    );
+                    ground.Name = "Ground";
+                    scene.AddObject(ground);
+                }
+
+                // Останавливаем симуляцию, если все фигуры удалены
+                if (!scene.Meshes.Any(m => m.Type != FigureType.Default))
+                {
+                    isSimulationRunning = false;
+                    MessageBox.Show("Симуляция завершена.");
+                    focusForm();
+                }
+            }
 
             // Обновление положения камеры
             UpdateCamera();
@@ -207,21 +266,25 @@ namespace test
             {
                 camera.Position += direction * cameraSpeed;
                 camera.Target += direction * cameraSpeed;
+                movingForward = false;
             }
             if (movingBackward)
             {
                 camera.Position -= direction * cameraSpeed;
                 camera.Target -= direction * cameraSpeed;
+                movingBackward = false;
             }
             if (movingLeft)
             {
                 camera.Position -= right * cameraSpeed;
                 camera.Target -= right * cameraSpeed;
+                movingLeft = false;
             }
             if (movingRight)
             {
                 camera.Position += right * cameraSpeed;
                 camera.Target += right * cameraSpeed;
+                movingRight = false;
             }
 
             // Rotation around the Y axis (yaw)
@@ -230,12 +293,14 @@ namespace test
                 Matrix4x4 rotationMatrix = Matrix4x4.CreateFromAxisAngle(camera.Up, rotationSpeed);
                 direction = Vector3.TransformNormal(direction, rotationMatrix);
                 camera.Target = camera.Position + direction;
+                rotatingLeft = false;
             }
             if (rotatingRight)
             {
                 Matrix4x4 rotationMatrix = Matrix4x4.CreateFromAxisAngle(camera.Up, -rotationSpeed);
                 direction = Vector3.TransformNormal(direction, rotationMatrix);
                 camera.Target = camera.Position + direction;
+                rotatingRight = false;
             }
 
             // Rotation around the right vector (pitch)
@@ -245,6 +310,7 @@ namespace test
                 direction = Vector3.TransformNormal(direction, rotationMatrix);
                 camera.Up = Vector3.Normalize(Vector3.TransformNormal(camera.Up, rotationMatrix));
                 camera.Target = camera.Position + direction;
+                rotatingUp = false;
             }
             if (rotatingDown)
             {
@@ -252,47 +318,8 @@ namespace test
                 direction = Vector3.TransformNormal(direction, rotationMatrix);
                 camera.Up = Vector3.Normalize(Vector3.TransformNormal(camera.Up, rotationMatrix));
                 camera.Target = camera.Position + direction;
-            }
-        }
-
-        private void Form1_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.W)
-                movingForward = true;
-            if (e.KeyCode == Keys.S)
-                movingBackward = true;
-            if (e.KeyCode == Keys.A)
-                movingLeft = true;
-            if (e.KeyCode == Keys.D)
-                movingRight = true;
-            if (e.KeyCode == Keys.Up)
-                rotatingUp = true;
-            if (e.KeyCode == Keys.Down)
-                rotatingDown = true;
-            if (e.KeyCode == Keys.Left)
-                rotatingLeft = true;
-            if (e.KeyCode == Keys.Right)
-                rotatingRight = true;
-        }
-
-        private void Form1_KeyUp(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.W)
-                movingForward = false;
-            if (e.KeyCode == Keys.S)
-                movingBackward = false;
-            if (e.KeyCode == Keys.A)
-                movingLeft = false;
-            if (e.KeyCode == Keys.D)
-                movingRight = false;
-            if (e.KeyCode == Keys.Up)
-                rotatingUp = false;
-            if (e.KeyCode == Keys.Down)
                 rotatingDown = false;
-            if (e.KeyCode == Keys.Left)
-                rotatingLeft = false;
-            if (e.KeyCode == Keys.Right)
-                rotatingRight = false;
+            }
         }
 
         private void Render()
@@ -426,11 +453,6 @@ namespace test
                         {
                             // Закрашиваем треугольник с использованием Гуро освещения
                             DrawTriangle(screenV1, screenV2, screenV3, i1, i2, i3, objectColor);
-                        }
-                        else
-                        {
-                            // Закрашиваем треугольник с использованием плоского освещения
-                            DrawTriangleFlat(screenV1, screenV2, screenV3, intensity, objectColor);
                         }
                     }
                 }
@@ -571,73 +593,6 @@ namespace test
                 return false;
         }
 
-        // ПЛОСКАЯ
-        private void DrawTriangleFlat(Vector3 v1, Vector3 v2, Vector3 v3, float intensity, Color objectColor)
-        {
-            // Сортировка вершин по Y
-            if (v1.Y > v2.Y)
-            {
-                Swap(ref v1, ref v2);
-                Swap(ref intensity, ref intensity); // Интенсивность одинакова для всего треугольника
-            }
-            if (v2.Y > v3.Y)
-            {
-                Swap(ref v2, ref v3);
-                Swap(ref intensity, ref intensity);
-            }
-            if (v1.Y > v2.Y)
-            {
-                Swap(ref v1, ref v2);
-                Swap(ref intensity, ref intensity);
-            }
-
-            int yStart = (int)Math.Max(0, Math.Ceiling(v1.Y));
-            int yEnd = (int)Math.Min(bitmap.Height - 1, Math.Floor(v3.Y));
-
-            for (int y = yStart; y <= yEnd; y++)
-            {
-                bool secondHalf = y > v2.Y || v2.Y == v1.Y;
-                float segmentHeight = secondHalf ? v3.Y - v2.Y : v2.Y - v1.Y;
-                if (segmentHeight == 0) segmentHeight = 1;
-                float alpha = (y - v1.Y) / (v3.Y - v1.Y);
-                float beta = (y - (secondHalf ? v2.Y : v1.Y)) / segmentHeight;
-
-                Vector3 A = v1 + (v3 - v1) * alpha;
-                Vector3 B = secondHalf ? v2 + (v3 - v2) * beta : v1 + (v2 - v1) * beta;
-
-                if (A.X > B.X)
-                {
-                    Swap(ref A, ref B);
-                }
-
-                int xStart = (int)Math.Max(0, Math.Ceiling(A.X));
-                int xEnd = (int)Math.Min(bitmap.Width - 1, Math.Floor(B.X));
-
-                for (int x = xStart; x <= xEnd; x++)
-                {
-                    float phi = (B.X == A.X) ? 1.0f : (x - A.X) / (B.X - A.X);
-                    Vector3 P = A + (B - A) * phi;
-
-                    int zIndex = x;
-                    int yIndex = y;
-                    if (zIndex < 0 || zIndex >= bitmap.Width || yIndex < 0 || yIndex >= bitmap.Height)
-                        continue;
-
-                    if (P.Z < zBuffer[zIndex, yIndex])
-                    {
-                        zBuffer[zIndex, yIndex] = P.Z;
-
-                        // Применяем интенсивность к цвету объекта
-                        int r = (int)(objectColor.R * Clamp(intensity, 0, 1));
-                        int g = (int)(objectColor.G * Clamp(intensity, 0, 1));
-                        int b = (int)(objectColor.B * Clamp(intensity, 0, 1));
-
-                        bitmap.SetPixel(zIndex, yIndex, Color.FromArgb(r, g, b));
-                    }
-                }
-            }
-        }
-
         // ГУРО
         private void DrawTriangle(Vector3 v1, Vector3 v2, Vector3 v3, float i1, float i2, float i3, Color objectColor)
         {
@@ -709,12 +664,11 @@ namespace test
                 }
             }
         }
-
-        private void Swap<T>(ref T a, ref T b)
+        
+        private void btn_simulate_Click(object sender, EventArgs e)
         {
-            T temp = a;
-            a = b;
-            b = temp;
+            isSimulationRunning = true;
+            focus_panel.Focus();
         }
     }
 }
