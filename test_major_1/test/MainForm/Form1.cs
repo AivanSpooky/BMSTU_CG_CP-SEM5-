@@ -39,7 +39,7 @@ namespace test
         private float cameraSpeed = 1f;
         private float rotationSpeed = 0.15f;
         // === DEBUG TOOLS ===
-        private bool debug_mode = false;
+        private bool debug_mode = true;
         private bool debug_identation = false;
         private bool useGouraudShading = true;
 
@@ -778,7 +778,7 @@ namespace test
                     int gridX = addIndentationForm.GridX;
                     int gridZ = addIndentationForm.GridZ;
                     int size = addIndentationForm.IdSize;
-                    int height = addIndentationForm.Height;
+                    int height = addIndentationForm.IdHeight;
 
                     if (type == IndentationType.Cylinder || type == IndentationType.HexPrism)
                         AddIndentation(gridX, gridZ, size, size, height, type);

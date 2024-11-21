@@ -140,6 +140,7 @@ namespace test
             Mesh mesh = new Mesh("Sphere", color);
             mesh.Type = FigureType.Sphere;
             mesh.Position = position;
+            mesh.RadiusInCells = radius / GPO.cellSize;
 
             for (int lat = 0; lat <= latitudeSegments; lat++)
             {

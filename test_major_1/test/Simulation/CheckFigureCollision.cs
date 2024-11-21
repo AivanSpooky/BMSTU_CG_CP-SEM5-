@@ -25,28 +25,26 @@ namespace test
         {
             if (isMessageBoxShown)
                 return false;
-            // Получаем позицию фигуры
-            Vector3 figurePosition = mesh.Position;
 
-            // Флаг, показывающий, попала ли фигура в лунку
+            Vector3 figurePosition = mesh.Position;
             bool isInIndentation = false;
 
             foreach (var indentation in indentations)
             {
-                // Вычисляем границы лунки
+                // Compute indentation boundaries in world units
                 float indentationXStart = indentation.GridX * GPO.cellSize;
                 float indentationXEnd = (indentation.GridX + indentation.Width) * GPO.cellSize;
                 float indentationZStart = indentation.GridZ * GPO.cellSize;
                 float indentationZEnd = (indentation.GridZ + indentation.Depth) * GPO.cellSize;
 
-                // Проверяем, находится ли фигура внутри границ лунки
+                // Check if the figure is within the indentation boundaries
                 if (figurePosition.X >= indentationXStart && figurePosition.X <= indentationXEnd &&
                     figurePosition.Z >= indentationZStart && figurePosition.Z <= indentationZEnd)
                 {
                     isInIndentation = true;
                     stopTimer();
 
-                    // Проверяем тип фигуры и тип лунки
+                    // Check if the figure type matches the indentation type
                     if ((int)mesh.Type == (int)indentation.Type)
                     {
                         // Retrieve figure dimensions in cells
@@ -73,9 +71,18 @@ namespace test
                         }
 
                         // Compare figure and indentation sizes
-                        if (Math.Abs(figureWidth - indentation.Width) < 0.1f &&
-                            Math.Abs(figureDepth - indentation.Depth) < 0.1f &&
-                            Math.Abs(figureHeight - indentation.Height) < 0.1f)
+                        bool sizesMatch = Math.Abs(figureWidth - indentation.Width) < 0.1f &&
+                                          Math.Abs(figureDepth - indentation.Depth) < 0.1f;
+
+                        // Only compare heights if the indentation has a non-zero height
+                        if (indentation.Height > 0)
+                        {
+                            sizesMatch = sizesMatch && Math.Abs(figureHeight - indentation.Height) < 0.1f;
+                        }
+
+                        Console.WriteLine($"{figureWidth} {indentation.Width} {figureDepth} {indentation.Depth} {figureHeight} {indentation.Height}");
+
+                        if (sizesMatch)
                         {
                             MessageBox.Show($"Фигура {mesh.Name} попала в свою лунку.");
                             indentationsToRemove.Add(indentation);
@@ -89,25 +96,21 @@ namespace test
                     {
                         MessageBox.Show($"Фигура {mesh.Name} попала в чужую лунку.");
                     }
+
                     startTimer();
-                    // Возвращаем true, чтобы указать, что фигура обработана и должна быть удалена
-                    return true;
+                    return true; // Figure processed and should be removed
                 }
             }
 
             if (!isInIndentation)
             {
                 stopTimer();
-                // Фигура не попала в лунку
                 MessageBox.Show($"Фигура {mesh.Name} не попала в лунку.");
-                // Возвращаем true, чтобы указать, что фигура обработана и должна быть удалена
-
                 startTimer();
-                return true;
+                return true; // Figure processed and should be removed
             }
 
-            // Если фигура не достигла площадки или не требует удаления
-            return false;
+            return false; // Figure has not yet reached the indentation
         }
     }
 }

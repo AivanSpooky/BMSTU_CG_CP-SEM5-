@@ -14,7 +14,6 @@ namespace test
         public int Width { get; set; }          // ширина лунки в клетках
         public int Depth { get; set; }          // глубина лунки в клетках (по размеру, не по оси Y)
         public int Height { get; set; }         // высота лунки (для высотовых фигур) (optional)
-        public float HeightInCells { get; set; }  // высота лунки в клетках/полигонах (optional)
         public IndentationType Type { get; set; }
 
         public Indentation(int gridX, int gridZ, int width, int depth, IndentationType type)
@@ -32,7 +31,6 @@ namespace test
             Width = width;
             Depth = depth;
             Height = height;
-            HeightInCells = height / GPO.cellSize;
             Type = type;
         }
     }

@@ -58,12 +58,12 @@ namespace test.DialogForms
             GridZ = (int)numericUpDownZ.Value;
             IdSize = (int)numericUpDownSize.Value;
             if (SelectedIndentationType == IndentationType.HexPrism || SelectedIndentationType == IndentationType.Cylinder)
-                Height = (int)numericUpDownHeight.Value;
+                IdHeight = (int)numericUpDownHeight.Value;
 
             // ПРОВЕРКА НА ВОЗМОЖНОСТЬ ДОБАВЛЕНИЯ ЛУНКИ
             if (ValidateIndentation != null)
             {
-                bool canAdd = ValidateIndentation(GridX, GridZ, IdSize, Height, SelectedIndentationType);
+                bool canAdd = ValidateIndentation(GridX, GridZ, IdSize, IdHeight, SelectedIndentationType);
                 if (!canAdd)
                 {
                     MessageBox.Show("Cannot add indentation at the specified location.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
