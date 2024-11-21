@@ -19,6 +19,7 @@ namespace test.DialogForms
         public Vector3 Position { get; private set; }
         public float ObjSize { get; private set; }
         public string ObjectName { get; private set; }
+        public int HeightInCells { get; private set; }
 
         public AddObjectForm()
         {
@@ -35,14 +36,14 @@ namespace test.DialogForms
 
             // Populate colors
             var colors = new List<KeyValuePair<string, Color>>()
-        {
-            new KeyValuePair<string, Color>("Red", Color.Red),
-            new KeyValuePair<string, Color>("Green", Color.Green),
-            new KeyValuePair<string, Color>("Blue", Color.Blue),
-            new KeyValuePair<string, Color>("Yellow", Color.Yellow),
-            new KeyValuePair<string, Color>("Magenta", Color.Magenta),
-            new KeyValuePair<string, Color>("Cyan", Color.Cyan)
-        };
+            {
+                new KeyValuePair<string, Color>("Red", Color.Red),
+                new KeyValuePair<string, Color>("Green", Color.Green),
+                new KeyValuePair<string, Color>("Blue", Color.Blue),
+                new KeyValuePair<string, Color>("Yellow", Color.Yellow),
+                new KeyValuePair<string, Color>("Magenta", Color.Magenta),
+                new KeyValuePair<string, Color>("Cyan", Color.Cyan)
+            };
             comboBoxColor.DataSource = colors;
             comboBoxColor.DisplayMember = "Key";
             comboBoxColor.ValueMember = "Value";
@@ -56,13 +57,13 @@ namespace test.DialogForms
             switch (figureType)
             {
                 case FigureType.Cube:
-                    return "Cube";
+                    return "Куб";
                 case FigureType.Sphere:
-                    return "Sphere";
+                    return "Сфера";
                 case FigureType.HexPrism:
-                    return "Hexagonal Prism";
-                case FigureType.Tetrahedron:
-                    return "Tetrahedron";
+                    return "Шестиугольная призма";
+                case FigureType.Cylinder:
+                    return "Цилиндр";
                 default:
                     return "Unknown";
             }
@@ -77,16 +78,42 @@ namespace test.DialogForms
             float z = (float)numericUpDownZ.Value * GPO.cellSize;
             Position = new Vector3(x, y, z);
             ObjSize = (float)numericUpDownSize.Value * GPO.cellSize;
+            HeightInCells = (int)numericUpDownHeight.Value;
             ObjectName = textBoxName.Text;
 
-            this.DialogResult = DialogResult.OK;
-            this.Close();
+            if (ObjSize <= 0)
+            {
+                MessageBox.Show("Размер должен быть больше 0!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            if (SelectedFigureType == FigureType.Cylinder || SelectedFigureType == FigureType.HexPrism)
+                if (HeightInCells <= 0)
+                {
+                    MessageBox.Show("Высота должна быть больше 0!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+            DialogResult = DialogResult.OK;
+            Close();
         }
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
             DialogResult = DialogResult.Cancel;
             Close();
+        }
+
+        private void comboBoxObjectType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            var selectedType = (FigureType)((dynamic)comboBoxObjectType.SelectedItem).Value;
+            bool requiresHeight = selectedType == FigureType.Cylinder || selectedType == FigureType.HexPrism;
+            numericUpDownHeight.Visible = requiresHeight;
+            groupBox10.Visible = requiresHeight;
+        }
+
+        private void AddObjectForm_Load(object sender, EventArgs e)
+        {
+            comboBoxObjectType_SelectedIndexChanged(null, null);
         }
     }
 }

@@ -38,19 +38,10 @@ namespace test
                             {
                                 y = CalculateSphericalIndentationY(i, j, indentation, cellSize, out normal);
                             }
-                            else if (indentation.Type == IndentationType.Cube)
+                            else if (indentation.Type == IndentationType.Cube || indentation.Type == IndentationType.HexPrism || indentation.Type == IndentationType.Cylinder)
                             {
                                 y = -indentation.Depth * cellSize;
                                 normal = Vector3.UnitY;
-                            }
-                            else if (indentation.Type == IndentationType.HexPrism)
-                            {
-                                y = -indentation.Depth * cellSize;
-                                normal = Vector3.UnitY;
-                            }
-                            else if (indentation.Type == IndentationType.Tetrahedron)
-                            {
-                                y = CalculateTetrahedralIndentationY(i, j, indentation, cellSize, out normal);
                             }
                             break;
                         }
@@ -93,8 +84,8 @@ namespace test
                     AddSphereIndentationWalls(mesh, vertices, indentation, cellSize, indentationEdges);
                 else if (indentation.Type == IndentationType.HexPrism)
                     AddHexPrismIndentationWalls(mesh, vertices, indentation, cellSize, indentationEdges);
-                else if (indentation.Type == IndentationType.Tetrahedron)
-                    AddTetrahedronIndentationWalls(mesh, vertices, indentation, cellSize, indentationEdges);
+                else if (indentation.Type == IndentationType.Cylinder)
+                    AddCylinderIndentationWalls(mesh, vertices, indentation, cellSize, indentationEdges);
             }
 
             // Recompute normals for smooth shading
@@ -334,23 +325,7 @@ namespace test
                 indentationEdges.Add((vCurrentLower, vCurrent.Position));
             }
         }
-        /*private static bool IsVertexInIndentation(int i, int j, Indentation indentation, float cellSize)
-        {
-            if (indentation.Type == IndentationType.Cube || indentation.Type == IndentationType.Sphere)
-            {
-                return i >= indentation.GridX && i <= indentation.GridX + indentation.Width &&
-                       j >= indentation.GridZ && j <= indentation.GridZ + indentation.Depth;
-            }
-            else if (indentation.Type == IndentationType.HexPrism)
-            {
-                return IsPointInHexagon(i, j, indentation);
-            }
-            else if (indentation.Type == IndentationType.Tetrahedron)
-            {
-                return IsPointInTriangle(i, j, indentation);
-            }
-            return false;
-        }*/
+
         private static bool IsVertexInIndentation(int i, int j, Indentation indentation, float cellSize)
         {
             return i >= indentation.GridX && i < indentation.GridX + indentation.Width &&
@@ -465,7 +440,7 @@ namespace test
                 Vertex vNext = vertices[next.i, next.j];
 
                 // Define the lower vertices based on indentation depth
-                float indentationY = -indentation.Depth * cellSize;
+                float indentationY = -indentation.Height * cellSize;
 
                 Vector3 vCurrentLower = new Vector3(vCurrent.Position.X, indentationY, vCurrent.Position.Z);
                 Vector3 vNextLower = new Vector3(vNext.Position.X, indentationY, vNext.Position.Z);
@@ -526,21 +501,13 @@ namespace test
             return (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1);
         }
         #endregion
-        #region Тетраэдр лунка
-        private static void AddTetrahedronIndentationWalls(Mesh mesh, Vertex[,] vertices, Indentation indentation, float cellSize, List<(Vector3 Start, Vector3 End)> indentationEdges)
+        #region Цилиндр лунка
+        private static void AddCylinderIndentationWalls(Mesh mesh, Vertex[,] vertices, Indentation indentation, float cellSize, List<(Vector3 Start, Vector3 End)> indentationEdges)
         {
-            // Parameters for the tetrahedron
+            // Parameters for the cylinder
             float centerX = indentation.GridX + indentation.Width / 2f;
             float centerZ = indentation.GridZ + indentation.Depth / 2f;
-            float size = indentation.Width; // Assuming width and depth are equal
-
-            // Define the base triangle vertices in grid coordinates
-            List<(float x, float z)> triangleVertices = new List<(float x, float z)>
-            {
-                (centerX, centerZ + size / (2 * (float)Math.Sqrt(3))),
-                (centerX - size / 2, centerZ - size / (2 * (float)Math.Sqrt(3))),
-                (centerX + size / 2, centerZ - size / (2 * (float)Math.Sqrt(3)))
-            };
+            float radius = Math.Min(indentation.Width, indentation.Depth) / 2f;
 
             // Identify the perimeter vertices within the grid
             List<(int i, int j)> perimeterVertices = new List<(int i, int j)>();
@@ -549,11 +516,11 @@ namespace test
             {
                 for (int j = 0; j <= mesh.GridDepth; j++)
                 {
-                    int x = i;
-                    int z = j;
+                    float x = i * cellSize;
+                    float z = j * cellSize;
 
-                    // Check if the point is inside the triangle
-                    if (IsPointInTriangle(x, z, triangleVertices))
+                    // Check if the point is inside the circle
+                    if (IsPointInCircle(x / cellSize, z / cellSize, centerX, centerZ, radius))
                     {
                         // Check if this vertex is on the boundary
                         bool isBoundary = false;
@@ -564,10 +531,10 @@ namespace test
                             if (ni < 0 || ni > mesh.GridWidth || nj < 0 || nj > mesh.GridDepth)
                                 continue;
 
-                            int nx = ni;
-                            int nz = nj;
+                            float nx = ni * cellSize;
+                            float nz = nj * cellSize;
 
-                            if (!IsPointInTriangle(nx, nz, triangleVertices))
+                            if (!IsPointInCircle(nx / cellSize, nz / cellSize, centerX, centerZ, radius))
                             {
                                 isBoundary = true;
                                 break;
@@ -583,7 +550,7 @@ namespace test
             }
 
             // Sort perimeter vertices clockwise
-            perimeterVertices = SortPerimeterClockwise(perimeterVertices, centerX, centerZ);
+            perimeterVertices = SortPerimeterClockwise(perimeterVertices, centerX * cellSize, centerZ * cellSize);
 
             // Create vertical walls along the perimeter
             for (int idx = 0; idx < perimeterVertices.Count; idx++)
@@ -596,7 +563,7 @@ namespace test
                 Vertex vNext = vertices[next.i, next.j];
 
                 // Define the lower vertices based on indentation depth
-                float indentationY = -indentation.Depth * cellSize;
+                float indentationY = -indentation.Height * cellSize;
 
                 Vector3 vCurrentLower = new Vector3(vCurrent.Position.X, indentationY, vCurrent.Position.Z);
                 Vector3 vNextLower = new Vector3(vNext.Position.X, indentationY, vNext.Position.Z);
@@ -622,75 +589,11 @@ namespace test
                 indentationEdges.Add((vCurrentLower, vCurrent.Position));
             }
         }
-
-        // Helper method to check if a point is inside a triangle
-        private static bool IsPointInTriangle(float x, float z, List<(float x, float z)> triangle)
+        private static bool IsPointInCircle(float x, float z, float centerX, float centerZ, float radius)
         {
-            var (x1, z1) = triangle[0];
-            var (x2, z2) = triangle[1];
-            var (x3, z3) = triangle[2];
-
-            float denominator = ((z2 - z3) * (x1 - x3) + (x3 - x2) * (z1 - z3));
-            float a = ((z2 - z3) * (x - x3) + (x3 - x2) * (z - z3)) / denominator;
-            float b = ((z3 - z1) * (x - x3) + (x1 - x3) * (z - z3)) / denominator;
-            float c = 1 - a - b;
-
-            return 0 <= a && a <= 1 && 0 <= b && b <= 1 && 0 <= c && c <= 1;
-        }
-
-        private static float CalculateTetrahedralIndentationY(int i, int j, Indentation indentation, float cellSize, out Vector3 normal)
-        {
-            // Parameters for the tetrahedron
-            float centerX = indentation.GridX + indentation.Width / 2f;
-            float centerZ = indentation.GridZ + indentation.Depth / 2f;
-            float size = indentation.Width; // Assuming width and depth are equal
-
-            // Height of the tetrahedron
-            float height = size * (float)(Math.Sqrt(6) / 3);
-
-            // Convert grid coordinates to world coordinates
-            float x = i;
-            float z = j;
-
             float dx = x - centerX;
             float dz = z - centerZ;
-
-            Vector3 v0 = new Vector3(centerX, 0, centerZ + size / (2 * (float)Math.Sqrt(3)));
-            Vector3 v1 = new Vector3(centerX - size / 2f, 0, centerZ - size / (2 * (float)Math.Sqrt(3)));
-            Vector3 v2 = new Vector3(centerX + size / 2f, 0, centerZ - size / (2 * (float)Math.Sqrt(3)));
-
-            Vector3 vTop = new Vector3(centerX, -height, centerZ);
-
-            Vector3 p = new Vector3(x, 0, z);
-            Vector3 barycentric = CalculateBarycentricCoordinates(p, v0, v1, v2);
-
-            float y = -barycentric.X * vTop.Y - barycentric.Y * vTop.Y - barycentric.Z * vTop.Y;
-
-            normal = Vector3.Normalize(Vector3.Cross(v1 - v0, v2 - v0));
-
-            return y * cellSize;
-        }
-        private static Vector3 CalculateBarycentricCoordinates(Vector3 p, Vector3 a, Vector3 b, Vector3 c)
-        {
-            Vector3 v0 = b - a;
-            Vector3 v1 = c - a;
-            Vector3 v2 = p - a;
-
-            float d00 = Vector3.Dot(v0, v0);
-            float d01 = Vector3.Dot(v0, v1);
-            float d11 = Vector3.Dot(v1, v1);
-            float d20 = Vector3.Dot(v2, v0);
-            float d21 = Vector3.Dot(v2, v1);
-            float denom = d00 * d11 - d01 * d01;
-
-            if (denom == 0)
-                return new Vector3(-1, -1, -1);
-
-            float v = (d11 * d20 - d01 * d21) / denom;
-            float w = (d00 * d21 - d01 * d20) / denom;
-            float u = 1.0f - v - w;
-
-            return new Vector3(u, v, w);
+            return (dx * dx + dz * dz) <= radius * radius;
         }
         #endregion
     }

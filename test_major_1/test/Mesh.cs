@@ -21,6 +21,9 @@ namespace test
 
         public int GridWidth { get; private set; }
         public int GridDepth { get; private set; }
+        public float SizeInCells { get; set; }   // For cubes
+        public float HeightInCells { get; set; } // For cylinders and prisms
+        public float RadiusInCells { get; set; } // For spheres and cylinders
 
         public Mesh(string name, Color color)
         {
@@ -40,79 +43,80 @@ namespace test
             Mesh mesh = new Mesh("Cube", color);
             mesh.Type = FigureType.Cube;
             mesh.Position = position;
+            mesh.SizeInCells = size / GPO.cellSize;
 
             float half = size / 2;
 
             // Вершины и нормали для каждой грани
             Vector3[] positions = new Vector3[]
             {
-        // Передняя грань (Z+)
-        new Vector3(-half, -half, half), // 0
-        new Vector3(half, -half, half),  // 1
-        new Vector3(half, half, half),   // 2
-        new Vector3(-half, half, half),  // 3
+                // Передняя грань (Z+)
+                new Vector3(-half, -half, half), // 0
+                new Vector3(half, -half, half),  // 1
+                new Vector3(half, half, half),   // 2
+                new Vector3(-half, half, half),  // 3
 
-        // Задняя грань (Z-)
-        new Vector3(half, -half, -half), // 4
-        new Vector3(-half, -half, -half),// 5
-        new Vector3(-half, half, -half), // 6
-        new Vector3(half, half, -half),  // 7
+                // Задняя грань (Z-)
+                new Vector3(half, -half, -half), // 4
+                new Vector3(-half, -half, -half),// 5
+                new Vector3(-half, half, -half), // 6
+                new Vector3(half, half, -half),  // 7
 
-        // Левая грань (X-)
-        new Vector3(-half, -half, -half),// 8
-        new Vector3(-half, -half, half), // 9
-        new Vector3(-half, half, half),  //10
-        new Vector3(-half, half, -half), //11
+                // Левая грань (X-)
+                new Vector3(-half, -half, -half),// 8
+                new Vector3(-half, -half, half), // 9
+                new Vector3(-half, half, half),  //10
+                new Vector3(-half, half, -half), //11
 
-        // Правая грань (X+)
-        new Vector3(half, -half, half),  //12
-        new Vector3(half, -half, -half), //13
-        new Vector3(half, half, -half),  //14
-        new Vector3(half, half, half),   //15
+                // Правая грань (X+)
+                new Vector3(half, -half, half),  //12
+                new Vector3(half, -half, -half), //13
+                new Vector3(half, half, -half),  //14
+                new Vector3(half, half, half),   //15
 
-        // Верхняя грань (Y+)
-        new Vector3(-half, half, half),  //16
-        new Vector3(half, half, half),   //17
-        new Vector3(half, half, -half),  //18
-        new Vector3(-half, half, -half), //19
+                // Верхняя грань (Y+)
+                new Vector3(-half, half, half),  //16
+                new Vector3(half, half, half),   //17
+                new Vector3(half, half, -half),  //18
+                new Vector3(-half, half, -half), //19
 
-        // Нижняя грань (Y-)
-        new Vector3(-half, -half, -half),//20
-        new Vector3(half, -half, -half), //21
-        new Vector3(half, -half, half),  //22
-        new Vector3(-half, -half, half), //23
+                // Нижняя грань (Y-)
+                new Vector3(-half, -half, -half),//20
+                new Vector3(half, -half, -half), //21
+                new Vector3(half, -half, half),  //22
+                new Vector3(-half, -half, half), //23
             };
 
             Vector3[] normals = new Vector3[]
             {
-        // Нормали передней грани
-        Vector3.UnitZ, Vector3.UnitZ, Vector3.UnitZ, Vector3.UnitZ,
-        // Нормали задней грани
-        -Vector3.UnitZ, -Vector3.UnitZ, -Vector3.UnitZ, -Vector3.UnitZ,
-        // Нормали левой грани
-        -Vector3.UnitX, -Vector3.UnitX, -Vector3.UnitX, -Vector3.UnitX,
-        // Нормали правой грани
-        Vector3.UnitX, Vector3.UnitX, Vector3.UnitX, Vector3.UnitX,
-        // Нормали верхней грани
-        Vector3.UnitY, Vector3.UnitY, Vector3.UnitY, Vector3.UnitY,
-        // Нормали нижней грани
-        -Vector3.UnitY, -Vector3.UnitY, -Vector3.UnitY, -Vector3.UnitY,
+                // Нормали передней грани
+                Vector3.UnitZ, Vector3.UnitZ, Vector3.UnitZ, Vector3.UnitZ,
+                // Нормали задней грани
+                -Vector3.UnitZ, -Vector3.UnitZ, -Vector3.UnitZ, -Vector3.UnitZ,
+                // Нормали левой грани
+                -Vector3.UnitX, -Vector3.UnitX, -Vector3.UnitX, -Vector3.UnitX,
+                // Нормали правой грани
+                Vector3.UnitX, Vector3.UnitX, Vector3.UnitX, Vector3.UnitX,
+                // Нормали верхней грани
+                Vector3.UnitY, Vector3.UnitY, Vector3.UnitY, Vector3.UnitY,
+                // Нормали нижней грани
+                -Vector3.UnitY, -Vector3.UnitY, -Vector3.UnitY, -Vector3.UnitY,
             };
 
             int[] indices = new int[]
             {
-        // Передняя грань
-        0, 1, 2, 0, 2, 3,
-        // Задняя грань
-        4, 5, 6, 4, 6, 7,
-        // Левая грань
-        8, 9, 10, 8, 10, 11,
-        // Правая грань
-        12, 13, 14, 12, 14, 15,
-        // Верхняя грань
-        16, 17, 18, 16, 18, 19,
-        // Нижняя грань
-        20, 21, 22, 20, 22, 23,
+                // Передняя грань
+                0, 1, 2, 0, 2, 3,
+                // Задняя грань
+                4, 5, 6, 4, 6, 7,
+                // Левая грань
+                8, 9, 10, 8, 10, 11,
+                // Правая грань
+                12, 13, 14, 12, 14, 15,
+                // Верхняя грань
+                16, 17, 18, 16, 18, 19,
+                // Нижняя грань
+                20, 21, 22, 20, 22, 23,
             };
 
             // Добавляем вершины с соответствующими нормалями
@@ -181,6 +185,8 @@ namespace test
             Mesh mesh = new Mesh("HexPrism", color);
             mesh.Type = FigureType.HexPrism;
             mesh.Position = position;
+            mesh.RadiusInCells = size / GPO.cellSize;
+            mesh.HeightInCells = height / GPO.cellSize;
 
             // Calculate the vertices for the top and bottom hexagons
             List<Vertex> vertices = new List<Vertex>();
@@ -246,35 +252,62 @@ namespace test
             return mesh;
         }
 
-        public static Mesh CreateTetrahedron(Vector3 position, float size, Color color)
+        public static Mesh CreateCylinder(Vector3 position, float radius, float height, int segments, Color color)
         {
-            Mesh mesh = new Mesh("Tetrahedron", color);
-            mesh.Type = FigureType.Tetrahedron;
+            Mesh mesh = new Mesh("Cylinder", color);
+            mesh.Type = FigureType.Cylinder;
             mesh.Position = position;
+            mesh.RadiusInCells = radius / GPO.cellSize;
+            mesh.HeightInCells = height / GPO.cellSize;
 
-            float sqrt2over3 = (float)(Math.Sqrt(2) / 3);
-            float sqrt6over3 = (float)(Math.Sqrt(6) / 3);
+            List<Vertex> vertices = new List<Vertex>();
+            float angleIncrement = (float)(2 * Math.PI / segments);
 
-            // Define vertices
-            Vector3[] vertices = new Vector3[]
+            // Top and bottom center vertices
+            Vertex topCenter = new Vertex(new Vector3(0, height / 2, 0), Vector3.UnitY);
+            Vertex bottomCenter = new Vertex(new Vector3(0, -height / 2, 0), -Vector3.UnitY);
+            vertices.Add(topCenter);    // Index 0
+            vertices.Add(bottomCenter); // Index 1
+
+            // Side vertices
+            for (int i = 0; i <= segments; i++)
             {
-        new Vector3(0, size * sqrt2over3, 0),                          // Top vertex
-        new Vector3(-size / 2, -size * sqrt2over3 / 2, size * sqrt6over3 / 2), // Base vertex 1
-        new Vector3(size / 2, -size * sqrt2over3 / 2, size * sqrt6over3 / 2),  // Base vertex 2
-        new Vector3(0, -size * sqrt2over3 / 2, -size * sqrt6over3),            // Base vertex 3
-            };
+                float angle = i * angleIncrement;
+                float x = radius * (float)Math.Cos(angle);
+                float z = radius * (float)Math.Sin(angle);
 
-            // Add vertices with placeholder normals
-            foreach (var v in vertices)
-            {
-                mesh.Vertices.Add(new Vertex(v, Vector3.Zero));
+                // Top vertex
+                vertices.Add(new Vertex(new Vector3(x, height / 2, z), Vector3.Zero));
+                // Bottom vertex
+                vertices.Add(new Vertex(new Vector3(x, -height / 2, z), Vector3.Zero));
             }
 
-            // Define faces
-            mesh.Faces.Add(new Face(0, 1, 2));
-            mesh.Faces.Add(new Face(0, 2, 3));
-            mesh.Faces.Add(new Face(0, 3, 1));
-            mesh.Faces.Add(new Face(1, 3, 2));
+            // Add vertices to mesh
+            mesh.Vertices.AddRange(vertices);
+
+            int offset = 2; // Offset due to top and bottom center vertices
+
+            // Add faces
+            for (int i = 0; i < segments; i++)
+            {
+                int topVertexIndex = offset + i * 2;
+                int topNextVertexIndex = offset + ((i + 1) % segments) * 2;
+
+                int bottomVertexIndex = offset + i * 2 + 1;
+                int bottomNextVertexIndex = offset + ((i + 1) % segments) * 2 + 1;
+
+                // Top face (winding order to make normals point up)
+                mesh.Faces.Add(new Face(0, topVertexIndex, topNextVertexIndex));
+
+                // Bottom face (winding order to make normals point down)
+                mesh.Faces.Add(new Face(1, bottomNextVertexIndex, bottomVertexIndex));
+
+                // Side faces
+                // First triangle
+                mesh.Faces.Add(new Face(topVertexIndex, topNextVertexIndex, bottomVertexIndex));
+                // Second triangle
+                mesh.Faces.Add(new Face(topNextVertexIndex, bottomNextVertexIndex, bottomVertexIndex));
+            }
 
             // Compute normals
             mesh.ComputeNormals();

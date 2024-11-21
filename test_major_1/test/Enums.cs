@@ -15,14 +15,14 @@ namespace test
         Sphere = 1,
         Cube = 2,
         HexPrism = 3,
-        Tetrahedron = 4 
+        Cylinder = 4 
     }
 
     public enum IndentationType
     {
         Sphere = 1,
         Cube = 2,
-        HexPrism = 3,   
-        Tetrahedron = 4 
+        HexPrism = 3,
+        Cylinder = 4 
     }
 }

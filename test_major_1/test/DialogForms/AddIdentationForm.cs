@@ -12,12 +12,13 @@ namespace test.DialogForms
 {
     public partial class AddIdentationForm : Form
     {
-        public Func<int, int, int, IndentationType, bool> ValidateIndentation { get; set; }
+        public Func<int, int, int, int, IndentationType, bool> ValidateIndentation { get; set; }
         public IndentationType SelectedIndentationType { get; private set; }
         public int GridX { get; private set; }
         public int Y { get; private set; }
         public int GridZ { get; private set; }
         public int IdSize { get; private set; }
+        public int IdHeight { get; private set; }
 
         public AddIdentationForm()
         {
@@ -38,13 +39,13 @@ namespace test.DialogForms
             switch (indentationType)
             {
                 case IndentationType.Cube:
-                    return "Куб";
+                    return "Cube";
                 case IndentationType.Sphere:
-                    return "Сфера";
+                    return "Sphere";
                 case IndentationType.HexPrism:
-                    return "Шестиугольная призма";
-                case IndentationType.Tetrahedron:
-                    return "Тетраэдр";
+                    return "Hexagonal Prism";
+                case IndentationType.Cylinder:
+                    return "Cylinder";
                 default:
                     return "Unknown";
             }
@@ -56,9 +57,20 @@ namespace test.DialogForms
             GridX = (int)numericUpDownX.Value;
             GridZ = (int)numericUpDownZ.Value;
             IdSize = (int)numericUpDownSize.Value;
+            if (SelectedIndentationType == IndentationType.HexPrism || SelectedIndentationType == IndentationType.Cylinder)
+                Height = (int)numericUpDownHeight.Value;
 
             // ПРОВЕРКА НА ВОЗМОЖНОСТЬ ДОБАВЛЕНИЯ ЛУНКИ
             if (ValidateIndentation != null)
+            {
+                bool canAdd = ValidateIndentation(GridX, GridZ, IdSize, Height, SelectedIndentationType);
+                if (!canAdd)
+                {
+                    MessageBox.Show("Cannot add indentation at the specified location.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+            }
+            /*if (ValidateIndentation != null)
             {
                 bool canAdd = ValidateIndentation(GridX, GridZ, IdSize, SelectedIndentationType);
                 if (!canAdd)
@@ -66,7 +78,7 @@ namespace test.DialogForms
                     MessageBox.Show("Невозможно добавить лунку в текущее место! Пожалуйста, перепроверьте размер и координаты!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
-            }
+            }*/
 
             DialogResult = DialogResult.OK;
             Close();
@@ -76,6 +88,19 @@ namespace test.DialogForms
         {
             DialogResult = DialogResult.Cancel;
             Close();
+        }
+
+        private void comboBoxIndentationType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            var selectedType = (IndentationType)((dynamic)comboBoxIndentationType.SelectedItem).Value;
+            bool requiresHeight = selectedType == IndentationType.Cylinder || selectedType == IndentationType.HexPrism;
+            numericUpDownHeight.Visible = requiresHeight;
+            groupBox2.Visible = requiresHeight;
+        }
+
+        private void AddIdentationForm_Load(object sender, EventArgs e)
+        {
+            comboBoxIndentationType_SelectedIndexChanged(null, null);
         }
     }
 }

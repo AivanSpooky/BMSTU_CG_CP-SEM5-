@@ -13,6 +13,7 @@ namespace test
         public static int gridWidth = 20;     // количество клеток по X
         public static int gridDepth = 20;     // количество клеток по Z
         public static float cellSize = 0.25f; // размер каждой клетки
+        public static int SPCPA = 10;         // Spheric Polygon Count Per Axis - количество полигонов на ось для сферических объектов
     }
     public partial class Form1 : Form
     {
@@ -104,7 +105,7 @@ namespace test
             sphere.Name = "«Желтая сфера»";
             scene.AddObject(sphere);
 
-            Mesh h = Mesh.CreateHexPrism(new Vector3(4f, 2, 4f), 1f, 0.5f, Color.Red);
+            Mesh h = Mesh.CreateHexPrism(new Vector3(4f, 2, 4f), 1f, 1f, Color.Red);
             h.Name = "«Красный hexagon»";
             scene.AddObject(h);
 
@@ -179,6 +180,32 @@ namespace test
             Indentation indentation = new Indentation(gridX, gridZ, width, depth, type);
             indentations.Add(indentation);
         }
+        private void AddIndentation(int gridX, int gridZ, int width, int depth, int height, IndentationType type)
+        {
+            for (int x = gridX; x < gridX + width; x++)
+            {
+                for (int z = gridZ; z < gridZ + depth; z++)
+                {
+                    if (x < 0 || x >= GPO.gridWidth || z < 0 || z >= GPO.gridDepth || gridOccupied[x, z])
+                    {
+                        // Cell is occupied or out of bounds
+                        Console.WriteLine("Cannot add indentation at ({0}, {1}): cell is occupied or out of bounds", x, z);
+                        return;
+                    }
+                }
+            }
+
+            for (int x = gridX; x < gridX + width; x++)
+            {
+                for (int z = gridZ; z < gridZ + depth; z++)
+                {
+                    gridOccupied[x, z] = true;
+                }
+            }
+
+            Indentation indentation = new Indentation(gridX, gridZ, width, depth, height, type);
+            indentations.Add(indentation);
+        }
         private void FreeOccupiedCells(Indentation indentation)
         {
             for (int x = indentation.GridX; x < indentation.GridX + indentation.Width; x++)
@@ -192,20 +219,22 @@ namespace test
                 }
             }
         }
-        private bool CanAddIndentation(int gridX, int gridZ, int size, IndentationType type)
+        private bool CanAddIndentation(int gridX, int gridZ, int size, int height, IndentationType type)
         {
             int width = size;
             int depth = size;
+
             for (int x = gridX; x < gridX + width; x++)
                 for (int z = gridZ; z < gridZ + depth; z++)
                     if (x < 0 || x >= GPO.gridWidth || z < 0 || z >= GPO.gridDepth || gridOccupied[x, z])
                         return false;
+
             return true;
         }
         #endregion
         private void Timer_Tick(object sender, EventArgs e)
         {
-            light.Position.Z += 0.4f;
+            /*light.Position.Z += 0.4f;*/
             angle += 0.01f;
 
             if (isSimulationRunning)
@@ -707,6 +736,8 @@ namespace test
                     Color color = addObjectForm.SelectedColor;
                     Vector3 position = addObjectForm.Position;
                     float size = addObjectForm.ObjSize;
+                    int heightInCells = addObjectForm.HeightInCells;
+                    float height = heightInCells * GPO.cellSize;
                     string name = addObjectForm.ObjectName;
 
                     Mesh mesh = null;
@@ -716,13 +747,15 @@ namespace test
                             mesh = Mesh.CreateCube(position, size, color);
                             break;
                         case FigureType.Sphere:
-                            mesh = Mesh.CreateSphere(position, size / 2, 10, 10, color);
+                            mesh = Mesh.CreateSphere(position, size / 2, GPO.SPCPA, GPO.SPCPA, color);
                             break;
                         case FigureType.HexPrism:
-                            mesh = Mesh.CreateHexPrism(position, size / 2, size, color);
+                            mesh = Mesh.CreateHexPrism(position, size / 2, height, color);
+                            mesh.HeightInCells = heightInCells;
                             break;
-                        case FigureType.Tetrahedron:
-                            mesh = Mesh.CreateTetrahedron(position, size, color);
+                        case FigureType.Cylinder:
+                            mesh = Mesh.CreateCylinder(position, size / 2, height, GPO.SPCPA, color);
+                            mesh.HeightInCells = heightInCells;
                             break;
                     }
 
@@ -745,10 +778,14 @@ namespace test
                     int gridX = addIndentationForm.GridX;
                     int gridZ = addIndentationForm.GridZ;
                     int size = addIndentationForm.IdSize;
+                    int height = addIndentationForm.Height;
 
+                    if (type == IndentationType.Cylinder || type == IndentationType.HexPrism)
+                        AddIndentation(gridX, gridZ, size, size, height, type);
+                    else
+                        AddIndentation(gridX, gridZ, size, size, type);
 
-                    AddIndentation(gridX, gridZ, size, size, type);
-
+                    // Rebuild the ground mesh
                     scene.RemoveObjectByName("Ground");
                     Mesh ground = Mesh.CreateGridPlane(
                         new Vector3(0, 0, 0),

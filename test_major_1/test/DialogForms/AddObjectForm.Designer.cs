@@ -46,6 +46,8 @@
             this.comboBoxColor = new System.Windows.Forms.ComboBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.comboBoxObjectType = new System.Windows.Forms.ComboBox();
+            this.groupBox10 = new System.Windows.Forms.GroupBox();
+            this.numericUpDownHeight = new System.Windows.Forms.NumericUpDown();
             this.groupBox9.SuspendLayout();
             this.groupBox8.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownSize)).BeginInit();
@@ -59,6 +61,8 @@
             this.groupBox3.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox1.SuspendLayout();
+            this.groupBox10.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownHeight)).BeginInit();
             this.SuspendLayout();
             // 
             // groupBox9
@@ -66,7 +70,7 @@
             this.groupBox9.Controls.Add(this.btnOk);
             this.groupBox9.Controls.Add(this.btnCancel);
             this.groupBox9.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.groupBox9.Location = new System.Drawing.Point(12, 428);
+            this.groupBox9.Location = new System.Drawing.Point(12, 510);
             this.groupBox9.Name = "groupBox9";
             this.groupBox9.Size = new System.Drawing.Size(229, 87);
             this.groupBox9.TabIndex = 15;
@@ -181,7 +185,7 @@
             // 
             this.groupBox3.Controls.Add(this.textBoxName);
             this.groupBox3.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.groupBox3.Location = new System.Drawing.Point(12, 346);
+            this.groupBox3.Location = new System.Drawing.Point(12, 428);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.Size = new System.Drawing.Size(229, 76);
             this.groupBox3.TabIndex = 12;
@@ -232,12 +236,33 @@
             this.comboBoxObjectType.Name = "comboBoxObjectType";
             this.comboBoxObjectType.Size = new System.Drawing.Size(210, 32);
             this.comboBoxObjectType.TabIndex = 0;
+            this.comboBoxObjectType.SelectedIndexChanged += new System.EventHandler(this.comboBoxObjectType_SelectedIndexChanged);
+            // 
+            // groupBox10
+            // 
+            this.groupBox10.Controls.Add(this.numericUpDownHeight);
+            this.groupBox10.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.groupBox10.Location = new System.Drawing.Point(12, 346);
+            this.groupBox10.Name = "groupBox10";
+            this.groupBox10.Size = new System.Drawing.Size(229, 76);
+            this.groupBox10.TabIndex = 16;
+            this.groupBox10.TabStop = false;
+            this.groupBox10.Text = "Высота объекта";
+            // 
+            // numericUpDownHeight
+            // 
+            this.numericUpDownHeight.Location = new System.Drawing.Point(6, 35);
+            this.numericUpDownHeight.Name = "numericUpDownHeight";
+            this.numericUpDownHeight.Size = new System.Drawing.Size(210, 29);
+            this.numericUpDownHeight.TabIndex = 7;
+            this.numericUpDownHeight.Visible = false;
             // 
             // AddObjectForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(250, 530);
+            this.ClientSize = new System.Drawing.Size(250, 605);
+            this.Controls.Add(this.groupBox10);
             this.Controls.Add(this.groupBox9);
             this.Controls.Add(this.groupBox8);
             this.Controls.Add(this.groupBox4);
@@ -246,6 +271,7 @@
             this.Controls.Add(this.groupBox1);
             this.Name = "AddObjectForm";
             this.Text = "AddObjectForm";
+            this.Load += new System.EventHandler(this.AddObjectForm_Load);
             this.groupBox9.ResumeLayout(false);
             this.groupBox8.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownSize)).EndInit();
@@ -260,6 +286,8 @@
             this.groupBox3.PerformLayout();
             this.groupBox2.ResumeLayout(false);
             this.groupBox1.ResumeLayout(false);
+            this.groupBox10.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDownHeight)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -284,5 +312,7 @@
         private System.Windows.Forms.ComboBox comboBoxColor;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.ComboBox comboBoxObjectType;
+        private System.Windows.Forms.GroupBox groupBox10;
+        private System.Windows.Forms.NumericUpDown numericUpDownHeight;
     }
 }

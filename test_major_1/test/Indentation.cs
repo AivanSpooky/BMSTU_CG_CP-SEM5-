@@ -9,10 +9,12 @@ namespace test
 {
     public class Indentation
     {
-        public int GridX { get; set; } // координата по X в клетках
-        public int GridZ { get; set; } // координата по Z в клетках
-        public int Width { get; set; } // ширина лунки в клетках
-        public int Depth { get; set; } // глубина лунки в клетках (по размеру, не по оси Y)
+        public int GridX { get; set; }          // координата по X в клетках
+        public int GridZ { get; set; }          // координата по Z в клетках
+        public int Width { get; set; }          // ширина лунки в клетках
+        public int Depth { get; set; }          // глубина лунки в клетках (по размеру, не по оси Y)
+        public int Height { get; set; }         // высота лунки (для высотовых фигур) (optional)
+        public float HeightInCells { get; set; }  // высота лунки в клетках/полигонах (optional)
         public IndentationType Type { get; set; }
 
         public Indentation(int gridX, int gridZ, int width, int depth, IndentationType type)
@@ -21,6 +23,16 @@ namespace test
             GridZ = gridZ;
             Width = width;
             Depth = depth;
+            Type = type;
+        }
+        public Indentation(int gridX, int gridZ, int width, int depth, int height, IndentationType type)
+        {
+            GridX = gridX;
+            GridZ = gridZ;
+            Width = width;
+            Depth = depth;
+            Height = height;
+            HeightInCells = height / GPO.cellSize;
             Type = type;
         }
     }

@@ -49,27 +49,44 @@ namespace test
                     // Проверяем тип фигуры и тип лунки
                     if ((int)mesh.Type == (int)indentation.Type)
                     {
-                        // Проверяем размер
-                        float figureSize = (mesh.Type == FigureType.Cube) ? 1f : 1f; // Предполагаемый размер фигуры
-                        float indentationSizeX = indentation.Width * GPO.cellSize;
-                        float indentationSizeZ = indentation.Depth * GPO.cellSize;
-
-                        if (Math.Abs(figureSize - indentationSizeX) < 0.1f &&
-                            Math.Abs(figureSize - indentationSizeZ) < 0.1f)
+                        // Retrieve figure dimensions in cells
+                        float figureWidth, figureDepth, figureHeight;
+                        if (mesh.Type == FigureType.Cube)
                         {
-                            // Фигура попала в свою лунку
+                            figureWidth = figureDepth = mesh.SizeInCells;
+                            figureHeight = mesh.SizeInCells;
+                        }
+                        else if (mesh.Type == FigureType.Cylinder || mesh.Type == FigureType.HexPrism)
+                        {
+                            figureWidth = figureDepth = mesh.RadiusInCells * 2;
+                            figureHeight = mesh.HeightInCells;
+                        }
+                        else if (mesh.Type == FigureType.Sphere)
+                        {
+                            figureWidth = figureDepth = mesh.RadiusInCells * 2;
+                            figureHeight = mesh.RadiusInCells * 2;
+                        }
+                        else
+                        {
+                            // Default values
+                            figureWidth = figureDepth = figureHeight = 1;
+                        }
+
+                        // Compare figure and indentation sizes
+                        if (Math.Abs(figureWidth - indentation.Width) < 0.1f &&
+                            Math.Abs(figureDepth - indentation.Depth) < 0.1f &&
+                            Math.Abs(figureHeight - indentation.Height) < 0.1f)
+                        {
                             MessageBox.Show($"Фигура {mesh.Name} попала в свою лунку.");
                             indentationsToRemove.Add(indentation);
                         }
                         else
                         {
-                            // Фигура попала в лунку не своего размера
                             MessageBox.Show($"Фигура {mesh.Name} попала в лунку не своего размера.");
                         }
                     }
                     else
                     {
-                        // Фигура попала в чужую лунку
                         MessageBox.Show($"Фигура {mesh.Name} попала в чужую лунку.");
                     }
                     startTimer();
