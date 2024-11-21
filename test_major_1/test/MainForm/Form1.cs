@@ -4,9 +4,16 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Linq;
+using test.DialogForms;
 
 namespace test
 {
+    public static class GPO // Grid Plane Options
+    {
+        public static int gridWidth = 20;     // количество клеток по X
+        public static int gridDepth = 20;     // количество клеток по Z
+        public static float cellSize = 0.25f; // размер каждой клетки
+    }
     public partial class Form1 : Form
     {
         Bitmap bitmap;
@@ -35,16 +42,11 @@ namespace test
         private bool debug_identation = false;
         private bool useGouraudShading = true;
 
-        // Параметры сетки площадки
-        int gridWidth = 20; // количество клеток по X
-        int gridDepth = 20; // количество клеток по Z
-        float cellSize = 0.25f; // размер каждой клетки
-
         // === SIMULATION ===
         // Флаг для управления симуляцией
         private bool isSimulationRunning = false;
         // Скорость падения фигур
-        private float fallSpeed = 0.4f;
+        private float fallSpeed = 0.15f;
 
         // Карта занятых клеток
         bool[,] gridOccupied;
@@ -64,23 +66,23 @@ namespace test
             scene = new Scene();
 
             // Инициализация карты занятых клеток
-            gridOccupied = new bool[gridWidth, gridDepth];
+            gridOccupied = new bool[GPO.gridWidth, GPO.gridDepth];
 
             // Инициализация списка лунок
             indentations = new List<Indentation>();
 
             // Добавление лунок
-            AddIndentation(8, 8, 4, 4, IndentationType.Sphere);
+            AddIndentation(8, 8, (int)(1/GPO.cellSize), (int)(1/GPO.cellSize), IndentationType.Sphere);
 
             // Add a cubic indentation at grid position (10, 14) with size 4x4 (for example)
-            AddIndentation(2, 2, 4, 4, IndentationType.Cube);
+            AddIndentation(2, 2, (int)(1/GPO.cellSize), (int)(1/GPO.cellSize), IndentationType.Cube);
 
             // Создание площадки с лунками
             Mesh ground = Mesh.CreateGridPlane(
                 new Vector3(0, 0, 0),
-                gridWidth,
-                gridDepth,
-                cellSize,
+                GPO.gridWidth,
+                GPO.gridDepth,
+                GPO.cellSize,
                 Color.Green,
                 indentations, // Pass the list of indentations
                 indentationEdges // Pass the list to store edges
@@ -94,20 +96,17 @@ namespace test
             cube.Name = "«Красный куб»";
             scene.AddObject(cube);
 
-            /*cube = Mesh.CreateCube(new Vector3(6f, -1f, 7.5f), 2f, Color.Brown);
-            cube.Name = "Cube";
-            scene.AddObject(cube);
-
-
-            // Добавление синего куба
-            Mesh cube1 = Mesh.CreateCube(new Vector3(5, 0.5f, 5), 1, Color.Blue);
-            cube1.Name = "Cube-1";
+            Mesh cube1 = Mesh.CreateCube(new Vector3(4f - 0.1f, 6f, 4f - 0.1f), 1, Color.Blue);
+            cube1.Name = "«Синий куб»";
             scene.AddObject(cube1);
-            cube1.Rotation *= Quaternion.CreateFromAxisAngle(Vector3.UnitY, 4f);*/
 
             Mesh sphere = Mesh.CreateSphere(new Vector3(2.5f, 2f, 2.5f), 0.5f, 10, 10, Color.Yellow);
             sphere.Name = "«Желтая сфера»";
             scene.AddObject(sphere);
+
+            Mesh h = Mesh.CreateHexPrism(new Vector3(4f, 2, 4f), 1f, 0.5f, Color.Red);
+            h.Name = "«Красный hexagon»";
+            scene.AddObject(h);
 
             /*sphere = Mesh.CreateSphere(new Vector3(6, 0.5f, 8.7f), 0.4f, 10, 10, Color.AliceBlue);
             sphere.Name = "Sphere";
@@ -121,7 +120,7 @@ namespace test
             light = new Light(new Vector3(1, 1f, 2f));
             if (debug_mode)
             {
-                Mesh lightSphere = Mesh.CreateSphere(light.Position, 0.1f, 10, 10, Color.Purple);
+                Mesh lightSphere = Mesh.CreateSphere(light.Position, 0.5f, 10, 10, Color.Purple);
                 lightSphere.Name = "LightSphere";
                 scene.AddObject(lightSphere);
             }
@@ -150,23 +149,24 @@ namespace test
             this.KeyPreview = true;
             focus_panel.Focus();
         }
+        #region Луночка методы
         private void AddIndentation(int gridX, int gridZ, int width, int depth, IndentationType type)
         {
-            // Проверка, что клетки не заняты
+            // Check if cells are occupied
             for (int x = gridX; x < gridX + width; x++)
             {
                 for (int z = gridZ; z < gridZ + depth; z++)
                 {
-                    if (x < 0 || x >= gridWidth || z < 0 || z >= gridDepth || gridOccupied[x, z])
+                    if (x < 0 || x >= GPO.gridWidth || z < 0 || z >= GPO.gridDepth || gridOccupied[x, z])
                     {
-                        // Клетка занята или выходит за пределы
+                        // Cell is occupied or out of bounds
                         Console.WriteLine("Cannot add indentation at ({0}, {1}): cell is occupied or out of bounds", x, z);
                         return;
                     }
                 }
             }
 
-            // Отмечаем клетки как занятые
+            // Mark cells as occupied
             for (int x = gridX; x < gridX + width; x++)
             {
                 for (int z = gridZ; z < gridZ + depth; z++)
@@ -175,13 +175,37 @@ namespace test
                 }
             }
 
-            // Добавляем лунку
+            // Add indentation
             Indentation indentation = new Indentation(gridX, gridZ, width, depth, type);
             indentations.Add(indentation);
         }
-
+        private void FreeOccupiedCells(Indentation indentation)
+        {
+            for (int x = indentation.GridX; x < indentation.GridX + indentation.Width; x++)
+            {
+                for (int z = indentation.GridZ; z < indentation.GridZ + indentation.Depth; z++)
+                {
+                    if (x >= 0 && x < GPO.gridWidth && z >= 0 && z < GPO.gridDepth)
+                    {
+                        gridOccupied[x, z] = false;
+                    }
+                }
+            }
+        }
+        private bool CanAddIndentation(int gridX, int gridZ, int size, IndentationType type)
+        {
+            int width = size;
+            int depth = size;
+            for (int x = gridX; x < gridX + width; x++)
+                for (int z = gridZ; z < gridZ + depth; z++)
+                    if (x < 0 || x >= GPO.gridWidth || z < 0 || z >= GPO.gridDepth || gridOccupied[x, z])
+                        return false;
+            return true;
+        }
+        #endregion
         private void Timer_Tick(object sender, EventArgs e)
         {
+            light.Position.Z += 0.4f;
             angle += 0.01f;
 
             if (isSimulationRunning)
@@ -224,15 +248,17 @@ namespace test
                     foreach (var indentation in indentationsToRemove)
                     {
                         indentations.Remove(indentation);
+                        // Free up the occupied cells
+                        FreeOccupiedCells(indentation);
                     }
 
-                    // Обновляем площадку
+                    // Rebuild the ground mesh
                     scene.RemoveObjectByName("Ground");
                     Mesh ground = Mesh.CreateGridPlane(
                         new Vector3(0, 0, 0),
-                        gridWidth,
-                        gridDepth,
-                        cellSize,
+                        GPO.gridWidth,
+                        GPO.gridDepth,
+                        GPO.cellSize,
                         Color.Green,
                         indentations,
                         indentationEdges
@@ -664,11 +690,80 @@ namespace test
                 }
             }
         }
-        
+
+        #region Кнопки
         private void btn_simulate_Click(object sender, EventArgs e)
         {
             isSimulationRunning = true;
             focus_panel.Focus();
         }
+        private void btn_add_fig_Click(object sender, EventArgs e)
+        {
+            using (AddObjectForm addObjectForm = new AddObjectForm())
+            {
+                if (addObjectForm.ShowDialog() == DialogResult.OK)
+                {
+                    FigureType type = addObjectForm.SelectedFigureType;
+                    Color color = addObjectForm.SelectedColor;
+                    Vector3 position = addObjectForm.Position;
+                    float size = addObjectForm.ObjSize;
+                    string name = addObjectForm.ObjectName;
+
+                    Mesh mesh = null;
+                    switch (type)
+                    {
+                        case FigureType.Cube:
+                            mesh = Mesh.CreateCube(position, size, color);
+                            break;
+                        case FigureType.Sphere:
+                            mesh = Mesh.CreateSphere(position, size / 2, 10, 10, color);
+                            break;
+                        case FigureType.HexPrism:
+                            mesh = Mesh.CreateHexPrism(position, size / 2, size, color);
+                            break;
+                        case FigureType.Tetrahedron:
+                            mesh = Mesh.CreateTetrahedron(position, size, color);
+                            break;
+                    }
+
+                    if (mesh != null)
+                    {
+                        mesh.Name = name;
+                        scene.AddObject(mesh);
+                    }
+                }
+            }
+        }
+        private void btn_add_ident_Click(object sender, EventArgs e)
+        {
+            using (AddIdentationForm addIndentationForm = new AddIdentationForm())
+            {
+                addIndentationForm.ValidateIndentation = CanAddIndentation;
+                if (addIndentationForm.ShowDialog() == DialogResult.OK)
+                {
+                    IndentationType type = addIndentationForm.SelectedIndentationType;
+                    int gridX = addIndentationForm.GridX;
+                    int gridZ = addIndentationForm.GridZ;
+                    int size = addIndentationForm.IdSize;
+
+
+                    AddIndentation(gridX, gridZ, size, size, type);
+
+                    scene.RemoveObjectByName("Ground");
+                    Mesh ground = Mesh.CreateGridPlane(
+                        new Vector3(0, 0, 0),
+                        GPO.gridWidth,
+                        GPO.gridDepth,
+                        GPO.cellSize,
+                        Color.Green,
+                        indentations,
+                        indentationEdges
+                    );
+                    ground.Name = "Ground";
+                    scene.AddObject(ground);
+                }
+            }
+        }
+        #endregion
     }
 }

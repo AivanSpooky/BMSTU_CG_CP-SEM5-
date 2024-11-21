@@ -131,58 +131,6 @@ namespace test
             return mesh;
         }
 
-        public static Mesh CreateGridPlane(Vector3 position, int gridWidth, int gridDepth, float cellSize, Color color)
-        {
-            Mesh mesh = new Mesh("GridPlane", color);
-            mesh.Position = position;
-
-            // Создание массива вершин
-            Vertex[,] vertices = new Vertex[gridWidth + 1, gridDepth + 1];
-
-            // Создание вершин
-            for (int i = 0; i <= gridWidth; i++)
-            {
-                for (int j = 0; j <= gridDepth; j++)
-                {
-                    float x = i * cellSize;
-                    float z = j * cellSize;
-                    float y = 0f;
-
-                    Vector3 normal = Vector3.UnitY; // Нормаль направлена вверх
-
-                    Vector3 vertexPos = new Vector3(x, y, z);
-                    vertices[i, j] = new Vertex(vertexPos, normal);
-                }
-            }
-
-            // Добавление вершин в список
-            foreach (var vertex in vertices)
-            {
-                mesh.Vertices.Add(vertex);
-            }
-
-            // Создание граней
-            for (int i = 0; i < gridWidth; i++)
-            {
-                for (int j = 0; j < gridDepth; j++)
-                {
-                    int topLeft = i * (gridDepth + 1) + j;
-                    int topRight = (i + 1) * (gridDepth + 1) + j;
-                    int bottomLeft = i * (gridDepth + 1) + (j + 1);
-                    int bottomRight = (i + 1) * (gridDepth + 1) + (j + 1);
-
-                    // Обеспечиваем правильный порядок вершин для нормалей
-                    mesh.Faces.Add(new Face(topLeft, bottomLeft, topRight));
-                    mesh.Faces.Add(new Face(bottomLeft, bottomRight, topRight));
-                }
-            }
-
-            // Вычисляем нормали (не обязательно, так как нормали уже заданы)
-            // mesh.ComputeNormals();
-
-            return mesh;
-        }
-
         public static Mesh CreateSphere(Vector3 position, float radius, int latitudeSegments, int longitudeSegments, Color color, float minTheta = 0f, float maxTheta = (float)Math.PI)
         {
             Mesh mesh = new Mesh("Sphere", color);
@@ -227,6 +175,113 @@ namespace test
             // Нормали уже вычислены
             return mesh;
         }
+
+        public static Mesh CreateHexPrism(Vector3 position, float size, float height, Color color)
+        {
+            Mesh mesh = new Mesh("HexPrism", color);
+            mesh.Type = FigureType.HexPrism;
+            mesh.Position = position;
+
+            // Calculate the vertices for the top and bottom hexagons
+            List<Vertex> vertices = new List<Vertex>();
+            float angleIncrement = (float)(Math.PI / 3); // 60 degrees
+
+            // Top and bottom vertices
+            for (int i = 0; i < 6; i++)
+            {
+                float angle = i * angleIncrement;
+                float x = size * (float)Math.Cos(angle);
+                float z = size * (float)Math.Sin(angle);
+
+                // Top vertex
+                vertices.Add(new Vertex(new Vector3(x, height / 2, z), Vector3.Zero));
+                // Bottom vertex
+                vertices.Add(new Vertex(new Vector3(x, -height / 2, z), Vector3.Zero));
+            }
+
+            // Add vertices to mesh
+            mesh.Vertices.AddRange(vertices);
+
+            // Add side faces with corrected winding order
+            for (int i = 0; i < 6; i++)
+            {
+                int next = (i + 1) % 6;
+
+                int topCurrent = i * 2;
+                int bottomCurrent = i * 2 + 1;
+                int topNext = next * 2;
+                int bottomNext = next * 2 + 1;
+
+                // Side face (two triangles) with corrected vertex order
+                mesh.Faces.Add(new Face(topCurrent, topNext, bottomCurrent));     // Triangle 1
+                mesh.Faces.Add(new Face(topNext, bottomNext, bottomCurrent));     // Triangle 2
+            }
+
+            // Add top and bottom faces
+            // Top face
+            int centerTopIndex = mesh.Vertices.Count;
+            mesh.Vertices.Add(new Vertex(new Vector3(0, height / 2, 0), Vector3.Zero));
+
+            for (int i = 0; i < 6; i++)
+            {
+                int next = (i + 1) % 6;
+                // Corrected winding order for the top face
+                mesh.Faces.Add(new Face(centerTopIndex, next * 2, i * 2));
+            }
+
+            // Bottom face
+            int centerBottomIndex = mesh.Vertices.Count;
+            mesh.Vertices.Add(new Vertex(new Vector3(0, -height / 2, 0), Vector3.Zero));
+
+            for (int i = 0; i < 6; i++)
+            {
+                int next = (i + 1) % 6;
+                // Corrected winding order for the bottom face
+                mesh.Faces.Add(new Face(centerBottomIndex, next * 2 + 1, i * 2 + 1));
+            }
+
+            // Compute normals
+            mesh.ComputeNormals();
+
+            return mesh;
+        }
+
+        public static Mesh CreateTetrahedron(Vector3 position, float size, Color color)
+        {
+            Mesh mesh = new Mesh("Tetrahedron", color);
+            mesh.Type = FigureType.Tetrahedron;
+            mesh.Position = position;
+
+            float sqrt2over3 = (float)(Math.Sqrt(2) / 3);
+            float sqrt6over3 = (float)(Math.Sqrt(6) / 3);
+
+            // Define vertices
+            Vector3[] vertices = new Vector3[]
+            {
+        new Vector3(0, size * sqrt2over3, 0),                          // Top vertex
+        new Vector3(-size / 2, -size * sqrt2over3 / 2, size * sqrt6over3 / 2), // Base vertex 1
+        new Vector3(size / 2, -size * sqrt2over3 / 2, size * sqrt6over3 / 2),  // Base vertex 2
+        new Vector3(0, -size * sqrt2over3 / 2, -size * sqrt6over3),            // Base vertex 3
+            };
+
+            // Add vertices with placeholder normals
+            foreach (var v in vertices)
+            {
+                mesh.Vertices.Add(new Vertex(v, Vector3.Zero));
+            }
+
+            // Define faces
+            mesh.Faces.Add(new Face(0, 1, 2));
+            mesh.Faces.Add(new Face(0, 2, 3));
+            mesh.Faces.Add(new Face(0, 3, 1));
+            mesh.Faces.Add(new Face(1, 3, 2));
+
+            // Compute normals
+            mesh.ComputeNormals();
+
+            return mesh;
+        }
+
 
         public void ComputeNormals()
         {

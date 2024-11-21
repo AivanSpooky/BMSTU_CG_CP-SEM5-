@@ -9,16 +9,20 @@ namespace test
     internal class Enums
     {
     }
-    public enum IndentationType
-    {
-        Sphere = 1,
-        Cube = 2
-    }
-
     public enum FigureType
     {
         Default = 0,
         Sphere = 1,
-        Cube = 2
+        Cube = 2,
+        HexPrism = 3,
+        Tetrahedron = 4 
+    }
+
+    public enum IndentationType
+    {
+        Sphere = 1,
+        Cube = 2,
+        HexPrism = 3,   
+        Tetrahedron = 4 
     }
 }

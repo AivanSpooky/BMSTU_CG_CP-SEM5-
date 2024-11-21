@@ -48,43 +48,5 @@ namespace test
             }
             return base.ProcessCmdKey(ref msg, keyData);
         }
-        /*private void Form1_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.W)
-                movingForward = true;
-            if (e.KeyCode == Keys.S)
-                movingBackward = true;
-            if (e.KeyCode == Keys.A)
-                movingLeft = true;
-            if (e.KeyCode == Keys.D)
-                movingRight = true;
-            if (e.KeyCode == Keys.Up)
-                rotatingUp = true;
-            if (e.KeyCode == Keys.Down)
-                rotatingDown = true;
-            if (e.KeyCode == Keys.Left)
-                rotatingLeft = true;
-            if (e.KeyCode == Keys.Right)
-                rotatingRight = true;
-        }
-        private void Form1_KeyUp(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.W)
-                movingForward = false;
-            if (e.KeyCode == Keys.S)
-                movingBackward = false;
-            if (e.KeyCode == Keys.A)
-                movingLeft = false;
-            if (e.KeyCode == Keys.D)
-                movingRight = false;
-            if (e.KeyCode == Keys.Up)
-                rotatingUp = false;
-            if (e.KeyCode == Keys.Down)
-                rotatingDown = false;
-            if (e.KeyCode == Keys.Left)
-                rotatingLeft = false;
-            if (e.KeyCode == Keys.Right)
-                rotatingRight = false;
-        }*/
     }
 }

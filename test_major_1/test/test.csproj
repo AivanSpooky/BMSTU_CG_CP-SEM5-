@@ -48,15 +48,25 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Camera.cs" />
+    <Compile Include="DialogForms\AddIdentationForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="DialogForms\AddIdentationForm.Designer.cs">
+      <DependentUpon>AddIdentationForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="DialogForms\AddObjectForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="DialogForms\AddObjectForm.Designer.cs">
+      <DependentUpon>AddObjectForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Enums.cs" />
     <Compile Include="ExtraFuncs\ExtraFuncs.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Face.cs" />
-    <Compile Include="Form1.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Form1.Designer.cs">
+    <Compile Include="MainForm\Form1.cs" />
+    <Compile Include="MainForm\Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
     <Compile Include="Indentation.cs" />
@@ -71,10 +81,16 @@
     <Compile Include="Simulation\CheckFigureCollision.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="testMeshM.cs" />
+    <Compile Include="MeshIndentations.cs" />
     <Compile Include="VectorExtentions.cs" />
     <Compile Include="Vertex.cs" />
-    <EmbeddedResource Include="Form1.resx">
+    <EmbeddedResource Include="DialogForms\AddIdentationForm.resx">
+      <DependentUpon>AddIdentationForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="DialogForms\AddObjectForm.resx">
+      <DependentUpon>AddObjectForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MainForm\Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">

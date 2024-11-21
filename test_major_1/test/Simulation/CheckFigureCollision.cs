@@ -34,10 +34,10 @@ namespace test
             foreach (var indentation in indentations)
             {
                 // Вычисляем границы лунки
-                float indentationXStart = indentation.GridX * cellSize;
-                float indentationXEnd = (indentation.GridX + indentation.Width) * cellSize;
-                float indentationZStart = indentation.GridZ * cellSize;
-                float indentationZEnd = (indentation.GridZ + indentation.Depth) * cellSize;
+                float indentationXStart = indentation.GridX * GPO.cellSize;
+                float indentationXEnd = (indentation.GridX + indentation.Width) * GPO.cellSize;
+                float indentationZStart = indentation.GridZ * GPO.cellSize;
+                float indentationZEnd = (indentation.GridZ + indentation.Depth) * GPO.cellSize;
 
                 // Проверяем, находится ли фигура внутри границ лунки
                 if (figurePosition.X >= indentationXStart && figurePosition.X <= indentationXEnd &&
@@ -51,8 +51,8 @@ namespace test
                     {
                         // Проверяем размер
                         float figureSize = (mesh.Type == FigureType.Cube) ? 1f : 1f; // Предполагаемый размер фигуры
-                        float indentationSizeX = indentation.Width * cellSize;
-                        float indentationSizeZ = indentation.Depth * cellSize;
+                        float indentationSizeX = indentation.Width * GPO.cellSize;
+                        float indentationSizeZ = indentation.Depth * GPO.cellSize;
 
                         if (Math.Abs(figureSize - indentationSizeX) < 0.1f &&
                             Math.Abs(figureSize - indentationSizeZ) < 0.1f)

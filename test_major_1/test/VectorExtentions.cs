@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 
 namespace test
 {
-
     public static class VectorExtensions
     {
         public static Vector3 XYZ(this Vector4 v)

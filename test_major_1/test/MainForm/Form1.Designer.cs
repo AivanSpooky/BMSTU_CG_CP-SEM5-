@@ -33,6 +33,8 @@
             this.btn_simulate = new System.Windows.Forms.Button();
             this.lbl_form = new System.Windows.Forms.Label();
             this.focus_panel = new System.Windows.Forms.Panel();
+            this.btn_add_fig = new System.Windows.Forms.Button();
+            this.btn_add_ident = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
@@ -48,17 +50,19 @@
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.btn_add_ident);
+            this.groupBox1.Controls.Add(this.btn_add_fig);
             this.groupBox1.Controls.Add(this.btn_simulate);
-            this.groupBox1.Location = new System.Drawing.Point(518, 49);
+            this.groupBox1.Location = new System.Drawing.Point(518, 40);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(214, 100);
+            this.groupBox1.Size = new System.Drawing.Size(214, 126);
             this.groupBox1.TabIndex = 1;
             this.groupBox1.TabStop = false;
             // 
             // btn_simulate
             // 
             this.btn_simulate.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.btn_simulate.Location = new System.Drawing.Point(6, 62);
+            this.btn_simulate.Location = new System.Drawing.Point(6, 88);
             this.btn_simulate.Name = "btn_simulate";
             this.btn_simulate.Size = new System.Drawing.Size(202, 32);
             this.btn_simulate.TabIndex = 2;
@@ -84,6 +88,30 @@
             this.focus_panel.TabIndex = 3;
             this.focus_panel.Visible = false;
             // 
+            // btn_add_fig
+            // 
+            this.btn_add_fig.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.btn_add_fig.Location = new System.Drawing.Point(6, 9);
+            this.btn_add_fig.Name = "btn_add_fig";
+            this.btn_add_fig.Size = new System.Drawing.Size(202, 32);
+            this.btn_add_fig.TabIndex = 4;
+            this.btn_add_fig.TabStop = false;
+            this.btn_add_fig.Text = "Добавить фигуру";
+            this.btn_add_fig.UseVisualStyleBackColor = true;
+            this.btn_add_fig.Click += new System.EventHandler(this.btn_add_fig_Click);
+            // 
+            // btn_add_ident
+            // 
+            this.btn_add_ident.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.btn_add_ident.Location = new System.Drawing.Point(6, 47);
+            this.btn_add_ident.Name = "btn_add_ident";
+            this.btn_add_ident.Size = new System.Drawing.Size(202, 32);
+            this.btn_add_ident.TabIndex = 5;
+            this.btn_add_ident.TabStop = false;
+            this.btn_add_ident.Text = "Добавить лунку";
+            this.btn_add_ident.UseVisualStyleBackColor = true;
+            this.btn_add_ident.Click += new System.EventHandler(this.btn_add_ident_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -108,6 +136,8 @@
         private System.Windows.Forms.Button btn_simulate;
         private System.Windows.Forms.Label lbl_form;
         private System.Windows.Forms.Panel focus_panel;
+        private System.Windows.Forms.Button btn_add_ident;
+        private System.Windows.Forms.Button btn_add_fig;
     }
 }
 

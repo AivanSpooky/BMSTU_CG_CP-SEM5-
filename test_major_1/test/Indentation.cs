@@ -24,5 +24,4 @@ namespace test
             Type = type;
         }
     }
-
 }
