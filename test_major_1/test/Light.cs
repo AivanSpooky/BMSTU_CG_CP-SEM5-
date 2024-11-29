@@ -10,10 +10,12 @@ namespace test
     public class Light
     {
         public Vector3 Position;
+        public float Intensity;
 
-        public Light(Vector3 position)
+        public Light(Vector3 position, float intensity = 1.0f)
         {
             Position = position;
+            Intensity = intensity;
         }
     }
 }

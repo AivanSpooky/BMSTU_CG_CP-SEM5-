@@ -34,16 +34,21 @@ namespace test
                     {
                         if (IsVertexInIndentation(i, j, indentation, cellSize))
                         {
-                            if (indentation.Type == IndentationType.Sphere)
+                            switch (indentation.Type)
                             {
-                                y = CalculateSphericalIndentationY(i, j, indentation, cellSize, out normal);
+                                case IndentationType.Sphere:
+                                    y = CalculateSphericalIndentationY(i, j, indentation, cellSize, out normal);
+                                    break;
+                                case IndentationType.Cube:
+                                case IndentationType.HexPrism:
+                                case IndentationType.Cylinder:
+                                    y = -indentation.Height * cellSize;
+                                    normal = Vector3.UnitY;
+                                    break;
+                                default:
+                                    break;
                             }
-                            else if (indentation.Type == IndentationType.Cube || indentation.Type == IndentationType.HexPrism || indentation.Type == IndentationType.Cylinder)
-                            {
-                                y = -indentation.Depth * cellSize;
-                                normal = Vector3.UnitY;
-                            }
-                            break;
+                            break; // Выход из цикла после первого совпадения
                         }
                     }
 
@@ -78,14 +83,23 @@ namespace test
             // Add walls for all indentations to create depth
             foreach (var indentation in indentations)
             {
-                if (indentation.Type == IndentationType.Cube)
-                    AddCubeIndentationWalls(mesh, vertices, indentation, cellSize, indentationEdges);
-                else if (indentation.Type == IndentationType.Sphere)
-                    AddSphereIndentationWalls(mesh, vertices, indentation, cellSize, indentationEdges);
-                else if (indentation.Type == IndentationType.HexPrism)
-                    AddHexPrismIndentationWalls(mesh, vertices, indentation, cellSize, indentationEdges);
-                else if (indentation.Type == IndentationType.Cylinder)
-                    AddCylinderIndentationWalls(mesh, vertices, indentation, cellSize, indentationEdges);
+                switch (indentation.Type)
+                {
+                    case IndentationType.Cube:
+                        AddCubeIndentationWalls(mesh, vertices, indentation, cellSize, indentationEdges);
+                        break;
+                    case IndentationType.Sphere:
+                        AddSphereIndentationWalls(mesh, vertices, indentation, cellSize, indentationEdges);
+                        break;
+                    case IndentationType.HexPrism:
+                        AddHexPrismIndentationWalls(mesh, vertices, indentation, cellSize, indentationEdges, Form1.light.Position);
+                        break;
+                    case IndentationType.Cylinder:
+                        AddCylinderIndentationWalls(mesh, vertices, indentation, cellSize, indentationEdges, Form1.light.Position);
+                        break;
+                    default:
+                        break;
+                }
             }
 
             // Recompute normals for smooth shading
@@ -162,9 +176,6 @@ namespace test
             indentationEdges.Add((v1Lower, v1.Position));
         }
 #endregion
-
-
-
         #region Общие методы
         // Helper method to get neighboring grid positions
         private static List<(int i, int j)> GetNeighbors(int i, int j)
@@ -208,31 +219,7 @@ namespace test
 
             return outward;
         }
-        private static bool IsPointInPolygon(float x, float z, List<(float x, float z)> polygon)
-        {
-            int intersections = 0;
-            int count = polygon.Count;
-
-            for (int i = 0; i < count; i++)
-            {
-                var (x1, z1) = polygon[i];
-                var (x2, z2) = polygon[(i + 1) % count];
-
-                if (IsIntersecting(x1, z1, x2, z2, x, z, x + 10000, z))
-                {
-                    intersections++;
-                }
-            }
-
-            return (intersections % 2 != 0);
-        }
         #endregion
-
-
-
-
-
-
         #region Сфера лунка
         private static void AddSphereIndentationWalls(Mesh mesh, Vertex[,] vertices, Indentation indentation, float cellSize, List<(Vector3 Start, Vector3 End)> indentationEdges)
         {
@@ -361,234 +348,188 @@ namespace test
             }
         }
         #endregion
-
-
-
-
-
-
-
         #region Шестиугольная призма лунка
-        private static void AddHexPrismIndentationWalls(Mesh mesh, Vertex[,] vertices, Indentation indentation, float cellSize, List<(Vector3 Start, Vector3 End)> indentationEdges)
+        private static void AddHexPrismIndentationWalls(
+    Mesh mesh,
+    Vertex[,] vertices,
+    Indentation indentation,
+    float cellSize,
+    List<(Vector3 Start, Vector3 End)> indentationEdges,
+    Vector3 lightPosition // Положение источника света
+)
         {
-            // Parameters for the hexagon
-            float centerX = indentation.GridX + indentation.Width / 2f;
-            float centerZ = indentation.GridZ + indentation.Depth / 2f;
-            float radius = indentation.Width / 2f; // Assuming width and depth are equal
+            float centerX = (indentation.GridX + indentation.Width / 2f) * cellSize;
+            float centerZ = (indentation.GridZ + indentation.Depth / 2f) * cellSize;
+            float radius = (indentation.Width / 2f) * cellSize;
 
-            // Calculate the hexagon vertices
-            List<(float x, float z)> hexVertices = new List<(float x, float z)>();
+            List<Vector2> hexVertices = new List<Vector2>();
             for (int i = 0; i < 6; i++)
             {
-                float angle = (float)Math.PI / 3f * i; // 60 degrees increments
+                float angle = (float)(Math.PI / 3 * i);
                 float x = centerX + radius * (float)Math.Cos(angle);
                 float z = centerZ + radius * (float)Math.Sin(angle);
-                hexVertices.Add((x, z));
+                hexVertices.Add(new Vector2(x, z));
             }
 
-            // Identify the perimeter vertices within the grid
-            List<(int i, int j)> perimeterVertices = new List<(int i, int j)>();
+            float indentationY = -indentation.Height * cellSize;
 
-            for (int i = 0; i <= mesh.GridWidth; i++)
+            // Опускаем вершины внутри шестиугольника
+            for (int i = 0; i < vertices.GetLength(0); i++)
             {
-                for (int j = 0; j <= mesh.GridDepth; j++)
+                for (int j = 0; j < vertices.GetLength(1); j++)
                 {
-                    float x = i;
-                    float z = j;
+                    Vector3 vertexPos = vertices[i, j].Position;
+                    Vector2 point = new Vector2(vertexPos.X, vertexPos.Z);
 
-                    // Check if the point is inside the hexagon
-                    if (IsPointInHexagon(x, z, hexVertices))
+                    if (IsPointInPolygon(point, hexVertices))
                     {
-                        // Check if this vertex is on the boundary
-                        bool isBoundary = false;
-                        foreach (var neighbor in GetNeighbors(i, j))
-                        {
-                            int ni = neighbor.i;
-                            int nj = neighbor.j;
-                            if (ni < 0 || ni > mesh.GridWidth || nj < 0 || nj > mesh.GridDepth)
-                                continue;
-
-                            float nx = ni;
-                            float nz = nj;
-
-                            if (!IsPointInHexagon(nx, nz, hexVertices))
-                            {
-                                isBoundary = true;
-                                break;
-                            }
-                        }
-
-                        if (isBoundary)
-                        {
-                            perimeterVertices.Add((i, j));
-                        }
+                        vertices[i, j].Position = new Vector3(vertexPos.X, indentationY, vertexPos.Z);
                     }
                 }
             }
 
-            // Sort perimeter vertices clockwise
-            perimeterVertices = SortPerimeterClockwise(perimeterVertices, centerX, centerZ);
-
-            // Create vertical walls along the perimeter
-            for (int idx = 0; idx < perimeterVertices.Count; idx++)
+            // Создание стенок вдоль рёбер шестиугольника
+            for (int i = 0; i < hexVertices.Count; i++)
             {
-                var current = perimeterVertices[idx];
-                var next = perimeterVertices[(idx + 1) % perimeterVertices.Count];
+                int next = (i + 1) % hexVertices.Count;
 
-                // Get the corresponding vertices
-                Vertex vCurrent = vertices[current.i, current.j];
-                Vertex vNext = vertices[next.i, next.j];
+                // Верхние и нижние вершины
+                Vector3 topCurrent = new Vector3(hexVertices[i].X, 0, hexVertices[i].Y);
+                Vector3 topNext = new Vector3(hexVertices[next].X, 0, hexVertices[next].Y);
+                Vector3 bottomCurrent = new Vector3(hexVertices[i].X, indentationY, hexVertices[i].Y);
+                Vector3 bottomNext = new Vector3(hexVertices[next].X, indentationY, hexVertices[next].Y);
 
-                // Define the lower vertices based on indentation depth
-                float indentationY = -indentation.Height * cellSize;
+                // Проверка положения света относительно стенки
+                Vector3 wallCenter = (topCurrent + bottomCurrent) / 2;
+                Vector3 lightDirection = lightPosition - wallCenter;
 
-                Vector3 vCurrentLower = new Vector3(vCurrent.Position.X, indentationY, vCurrent.Position.Z);
-                Vector3 vNextLower = new Vector3(vNext.Position.X, indentationY, vNext.Position.Z);
+                // Нормаль стены (направление зависит от положения света)
+                Vector3 edge = topNext - topCurrent;
+                Vector3 normal = Vector3.Normalize(Vector3.Cross(edge, Vector3.UnitY));
+                if (Vector3.Dot(normal, lightDirection) < 0)
+                {
+                    // Если нормаль направлена "не туда", инвертируем её
+                    normal = -normal;
+                }
 
-                // Calculate the normal for the vertical wall (facing outward)
-                Vector3 wallNormal = CalculateWallNormal(vCurrent.Position, vNext.Position, indentation.Depth * cellSize);
-
-                // Add new vertices for the wall
+                // Добавление вершин и граней для стены
                 int index = mesh.Vertices.Count;
-                mesh.Vertices.Add(new Vertex(vCurrent.Position, wallNormal));
-                mesh.Vertices.Add(new Vertex(vNext.Position, wallNormal));
-                mesh.Vertices.Add(new Vertex(vNextLower, wallNormal));
-                mesh.Vertices.Add(new Vertex(vCurrentLower, wallNormal));
+                mesh.Vertices.Add(new Vertex(topCurrent, normal));
+                mesh.Vertices.Add(new Vertex(topNext, normal));
+                mesh.Vertices.Add(new Vertex(bottomNext, normal));
+                mesh.Vertices.Add(new Vertex(bottomCurrent, normal));
 
-                // Add two triangles to form the wall face
                 mesh.Faces.Add(new Face(index, index + 1, index + 2));
                 mesh.Faces.Add(new Face(index, index + 2, index + 3));
 
-                // Record the edges for debugging
-                indentationEdges.Add((vCurrent.Position, vNext.Position));
-                indentationEdges.Add((vNext.Position, vNextLower));
-                indentationEdges.Add((vNextLower, vCurrentLower));
-                indentationEdges.Add((vCurrentLower, vCurrent.Position));
+                // Запись рёбер для отладки
+                indentationEdges.Add((topCurrent, topNext));
+                indentationEdges.Add((topNext, bottomNext));
+                indentationEdges.Add((bottomNext, bottomCurrent));
+                indentationEdges.Add((bottomCurrent, topCurrent));
             }
         }
 
-        // Helper method to check if a point is inside a hexagon
-        private static bool IsPointInHexagon(float x, float z, List<(float x, float z)> hexVertices)
+        private static bool IsPointInPolygon(Vector2 point, List<Vector2> polygon)
         {
-            int intersections = 0;
-            float x0 = x;
-            float z0 = z;
+            int crossings = 0;
+            int count = polygon.Count;
 
-            for (int i = 0; i < hexVertices.Count; i++)
+            for (int i = 0; i < count; i++)
             {
-                var v1 = hexVertices[i];
-                var v2 = hexVertices[(i + 1) % hexVertices.Count];
+                Vector2 a = polygon[i];
+                Vector2 b = polygon[(i + 1) % count];
 
-                if (IsIntersecting(v1.x, v1.z, v2.x, v2.z, x0, z0, x0 + 10000, z0))
+                if (((a.Y > point.Y) != (b.Y > point.Y)) &&
+                    (point.X < (b.X - a.X) * (point.Y - a.Y) / (b.Y - a.Y + float.Epsilon) + a.X))
                 {
-                    intersections++;
+                    crossings++;
                 }
             }
 
-            return (intersections % 2 != 0);
-        }
-
-        // Helper method to check if two lines intersect
-        private static bool IsIntersecting(float x1, float z1, float x2, float z2, float x3, float z3, float x4, float z4)
-        {
-            float denom = (x1 - x2) * (z3 - z4) - (z1 - z2) * (x3 - x4);
-            if (denom == 0)
-                return false;
-
-            float ua = ((x1 - x3) * (z3 - z4) - (z1 - z3) * (x3 - x4)) / denom;
-            float ub = ((x1 - x3) * (z1 - z2) - (z1 - z3) * (x1 - x2)) / denom;
-
-            return (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1);
+            return (crossings % 2 != 0);
         }
         #endregion
         #region Цилиндр лунка
-        private static void AddCylinderIndentationWalls(Mesh mesh, Vertex[,] vertices, Indentation indentation, float cellSize, List<(Vector3 Start, Vector3 End)> indentationEdges)
+        private static void AddCylinderIndentationWalls(
+    Mesh mesh,
+    Vertex[,] vertices,
+    Indentation indentation,
+    float cellSize,
+    List<(Vector3 Start, Vector3 End)> indentationEdges,
+    Vector3 lightPosition // Положение источника света
+)
         {
-            // Parameters for the cylinder
-            float centerX = indentation.GridX + indentation.Width / 2f;
-            float centerZ = indentation.GridZ + indentation.Depth / 2f;
-            float radius = Math.Min(indentation.Width, indentation.Depth) / 2f;
+            float centerX = (indentation.GridX + indentation.Width / 2f) * cellSize;
+            float centerZ = (indentation.GridZ + indentation.Depth / 2f) * cellSize;
+            float radius = (indentation.Width / 2f) * cellSize;
+            float indentationY = -indentation.Height * cellSize;
 
-            // Identify the perimeter vertices within the grid
-            List<(int i, int j)> perimeterVertices = new List<(int i, int j)>();
+            int gridWidth = vertices.GetLength(0) - 1;
+            int gridDepth = vertices.GetLength(1) - 1;
 
-            for (int i = 0; i <= mesh.GridWidth; i++)
+            // Опускаем вершины внутри круга
+            for (int i = 0; i <= gridWidth; i++)
             {
-                for (int j = 0; j <= mesh.GridDepth; j++)
+                for (int j = 0; j <= gridDepth; j++)
                 {
-                    float x = i * cellSize;
-                    float z = j * cellSize;
+                    Vector3 vertexPos = vertices[i, j].Position;
+                    float dx = vertexPos.X - centerX;
+                    float dz = vertexPos.Z - centerZ;
 
-                    // Check if the point is inside the circle
-                    if (IsPointInCircle(x / cellSize, z / cellSize, centerX, centerZ, radius))
+                    if ((dx * dx + dz * dz) <= radius * radius)
                     {
-                        // Check if this vertex is on the boundary
-                        bool isBoundary = false;
-                        foreach (var neighbor in GetNeighbors(i, j))
-                        {
-                            int ni = neighbor.i;
-                            int nj = neighbor.j;
-                            if (ni < 0 || ni > mesh.GridWidth || nj < 0 || nj > mesh.GridDepth)
-                                continue;
-
-                            float nx = ni * cellSize;
-                            float nz = nj * cellSize;
-
-                            if (!IsPointInCircle(nx / cellSize, nz / cellSize, centerX, centerZ, radius))
-                            {
-                                isBoundary = true;
-                                break;
-                            }
-                        }
-
-                        if (isBoundary)
-                        {
-                            perimeterVertices.Add((i, j));
-                        }
+                        vertices[i, j].Position = new Vector3(vertexPos.X, indentationY, vertexPos.Z);
                     }
                 }
             }
 
-            // Sort perimeter vertices clockwise
-            perimeterVertices = SortPerimeterClockwise(perimeterVertices, centerX * cellSize, centerZ * cellSize);
+            // Вычисление вершин окружности (периметр) для создания стенок
+            int segments = 36;
+            List<Vector3> perimeterVertices = new List<Vector3>();
+            for (int i = 0; i < segments; i++)
+            {
+                float angle = (float)(2 * Math.PI * i / segments);
+                float x = centerX + radius * (float)Math.Cos(angle);
+                float z = centerZ + radius * (float)Math.Sin(angle);
+                perimeterVertices.Add(new Vector3(x, 0, z));
+            }
 
-            // Create vertical walls along the perimeter
+            // Создание стенок вдоль периметра
             for (int idx = 0; idx < perimeterVertices.Count; idx++)
             {
-                var current = perimeterVertices[idx];
-                var next = perimeterVertices[(idx + 1) % perimeterVertices.Count];
+                Vector3 topCurrent = perimeterVertices[idx];
+                Vector3 topNext = perimeterVertices[(idx + 1) % perimeterVertices.Count];
+                Vector3 bottomCurrent = new Vector3(topCurrent.X, indentationY, topCurrent.Z);
+                Vector3 bottomNext = new Vector3(topNext.X, indentationY, topNext.Z);
 
-                // Get the corresponding vertices
-                Vertex vCurrent = vertices[current.i, current.j];
-                Vertex vNext = vertices[next.i, next.j];
+                Vector3 wallCenter = (topCurrent + bottomCurrent) / 2;
+                Vector3 lightDirection = lightPosition - wallCenter;
 
-                // Define the lower vertices based on indentation depth
-                float indentationY = -indentation.Height * cellSize;
+                Vector3 edge = topNext - topCurrent;
+                Vector3 normal = Vector3.Normalize(Vector3.Cross(edge, Vector3.UnitY));
+                if (Vector3.Dot(normal, lightDirection) < 0)
+                {
+                    normal = -normal;
+                }
 
-                Vector3 vCurrentLower = new Vector3(vCurrent.Position.X, indentationY, vCurrent.Position.Z);
-                Vector3 vNextLower = new Vector3(vNext.Position.X, indentationY, vNext.Position.Z);
-
-                // Calculate the normal for the vertical wall (facing outward)
-                Vector3 wallNormal = CalculateWallNormal(vCurrent.Position, vNext.Position, indentation.Depth * cellSize);
-
-                // Add new vertices for the wall
                 int index = mesh.Vertices.Count;
-                mesh.Vertices.Add(new Vertex(vCurrent.Position, wallNormal));
-                mesh.Vertices.Add(new Vertex(vNext.Position, wallNormal));
-                mesh.Vertices.Add(new Vertex(vNextLower, wallNormal));
-                mesh.Vertices.Add(new Vertex(vCurrentLower, wallNormal));
+                mesh.Vertices.Add(new Vertex(topCurrent, normal));
+                mesh.Vertices.Add(new Vertex(topNext, normal));
+                mesh.Vertices.Add(new Vertex(bottomNext, normal));
+                mesh.Vertices.Add(new Vertex(bottomCurrent, normal));
 
-                // Add two triangles to form the wall face
                 mesh.Faces.Add(new Face(index, index + 1, index + 2));
                 mesh.Faces.Add(new Face(index, index + 2, index + 3));
 
-                // Record the edges for debugging
-                indentationEdges.Add((vCurrent.Position, vNext.Position));
-                indentationEdges.Add((vNext.Position, vNextLower));
-                indentationEdges.Add((vNextLower, vCurrentLower));
-                indentationEdges.Add((vCurrentLower, vCurrent.Position));
+                indentationEdges.Add((topCurrent, topNext));
+                indentationEdges.Add((topNext, bottomNext));
+                indentationEdges.Add((bottomNext, bottomCurrent));
+                indentationEdges.Add((bottomCurrent, topCurrent));
             }
         }
+
+        // Метод проверки, находится ли точка внутри окружности
         private static bool IsPointInCircle(float x, float z, float centerX, float centerZ, float radius)
         {
             float dx = x - centerX;

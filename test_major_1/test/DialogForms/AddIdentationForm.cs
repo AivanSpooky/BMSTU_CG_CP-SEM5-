@@ -39,13 +39,13 @@ namespace test.DialogForms
             switch (indentationType)
             {
                 case IndentationType.Cube:
-                    return "Cube";
+                    return "Кубическая";
                 case IndentationType.Sphere:
-                    return "Sphere";
+                    return "Сферическая";
                 case IndentationType.HexPrism:
-                    return "Hexagonal Prism";
+                    return "Для шестиугольной призмы";
                 case IndentationType.Cylinder:
-                    return "Cylinder";
+                    return "Цилиндрическая";
                 default:
                     return "Unknown";
             }

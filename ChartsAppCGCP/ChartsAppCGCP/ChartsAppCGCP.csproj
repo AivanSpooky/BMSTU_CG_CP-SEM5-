@@ -4,10 +4,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{88486F27-6319-4F0F-870D-78B3B48611A1}</ProjectGuid>
+    <ProjectGuid>{06B331C3-224C-48C3-8044-C3B7EE3C3B1C}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>test</RootNamespace>
-    <AssemblyName>test</AssemblyName>
+    <RootNamespace>ChartsAppCGCP</RootNamespace>
+    <AssemblyName>ChartsAppCGCP</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -35,7 +35,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
+    <Reference Include="System.Windows.Forms.DataVisualization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -47,62 +47,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Camera.cs" />
-    <Compile Include="DialogForms\AddIdentationForm.cs">
+    <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="DialogForms\AddIdentationForm.Designer.cs">
-      <DependentUpon>AddIdentationForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="DialogForms\AddObjectForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="DialogForms\AddObjectForm.Designer.cs">
-      <DependentUpon>AddObjectForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="DialogForms\FieldSettingsForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="DialogForms\FieldSettingsForm.Designer.cs">
-      <DependentUpon>FieldSettingsForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Enums.cs" />
-    <Compile Include="ExtraFuncs\ExtraFuncs.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Face.cs" />
-    <Compile Include="MainForm\Form1.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="MainForm\Form1.Designer.cs">
+    <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
-    <Compile Include="Indentation.cs" />
-    <Compile Include="Keys\Keys.cs" />
-    <Compile Include="Light.cs" />
-    <Compile Include="Mesh.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Research\Research.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Scene.cs" />
-    <Compile Include="Simulation\CheckFigureCollision.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="MeshIndentations.cs" />
-    <Compile Include="VectorExtentions.cs" />
-    <Compile Include="Vertex.cs" />
-    <EmbeddedResource Include="DialogForms\AddIdentationForm.resx">
-      <DependentUpon>AddIdentationForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="DialogForms\AddObjectForm.resx">
-      <DependentUpon>AddObjectForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="DialogForms\FieldSettingsForm.resx">
-      <DependentUpon>FieldSettingsForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="MainForm\Form1.resx">
+    <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">

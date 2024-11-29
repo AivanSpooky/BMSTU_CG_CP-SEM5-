@@ -7,8 +7,16 @@ using System.Windows.Forms;
 
 namespace test
 {
+    public static class GPO                   // Grid Plane Options
+    {
+        public static int gridWidth = 20;     // количество клеток по X
+        public static int gridDepth = 20;     // количество клеток по Z
+        public static float cellSize = 0.25f; // размер каждой клетки
+        public static int SPCPA = 10;         // Spheric Polygon Count Per Axis - количество полигонов на ось для сферических объектов
+    }
     public partial class Form1 : Form
     {
+        private bool KP = true;
         private void FocusPanel_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
         {
             if (e.KeyCode == Keys.Up || e.KeyCode == Keys.Down ||
@@ -19,6 +27,7 @@ namespace test
         }
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
+            KP = true;
             switch (keyData)
             {
                 case Keys.W:
@@ -44,6 +53,9 @@ namespace test
                     break;
                 case Keys.Right:
                     rotatingRight = true;
+                    break;
+                default:
+                    KP = false;
                     break;
             }
             return base.ProcessCmdKey(ref msg, keyData);

@@ -8,26 +8,19 @@ using test.DialogForms;
 
 namespace test
 {
-    public static class GPO // Grid Plane Options
-    {
-        public static int gridWidth = 20;     // количество клеток по X
-        public static int gridDepth = 20;     // количество клеток по Z
-        public static float cellSize = 0.25f; // размер каждой клетки
-        public static int SPCPA = 10;         // Spheric Polygon Count Per Axis - количество полигонов на ось для сферических объектов
-    }
     public partial class Form1 : Form
     {
         Bitmap bitmap;
         float[,] zBuffer;
         Scene scene;
         Camera camera;
-        Light light;
+        public static Light light = new Light(new Vector3(1, 1f, 2f));
         Timer timer;
         float angle = 0;
         private bool focus = true;
         private bool isMessageBoxShown = false;
 
-        // Переменные для управления камерой
+        // === CAMERA MANAGEMENT ===
         private bool movingForward = false;
         private bool movingBackward = false;
         private bool movingLeft = false;
@@ -39,21 +32,30 @@ namespace test
         private float cameraSpeed = 1f;
         private float rotationSpeed = 0.15f;
         // === DEBUG TOOLS ===
-        private bool debug_mode = true;
+        private bool debug_mode = false;
         private bool debug_identation = false;
         private bool useGouraudShading = true;
-
         // === SIMULATION ===
-        // Флаг для управления симуляцией
         private bool isSimulationRunning = false;
-        // Скорость падения фигур
         private float fallSpeed = 0.15f;
-
+        // === INDENTS ===
         // Карта занятых клеток
         bool[,] gridOccupied;
         // Список лунок
         List<Indentation> indentations;
         private List<(Vector3 Start, Vector3 End)> indentationEdges = new List<(Vector3 Start, Vector3 End)>();
+        // === RESEARCH ===
+        public bool researchStart = true;
+        public bool firstPart = false;
+        public bool secondPart = true;
+        private ResearchType currentResearchType = ResearchType.None;
+        private enum ResearchType
+        {
+            None,
+            Objects,
+            Indentations
+        }
+        // === ===
 
         public Form1()
         {
@@ -73,10 +75,11 @@ namespace test
             indentations = new List<Indentation>();
 
             // Добавление лунок
-            AddIndentation(8, 8, (int)(1/GPO.cellSize), (int)(1/GPO.cellSize), IndentationType.Sphere);
+            /*AddIndentation(4, 4, (int)(3/GPO.cellSize), (int)(3/GPO.cellSize), IndentationType.Sphere);*/
 
-            // Add a cubic indentation at grid position (10, 14) with size 4x4 (for example)
-            AddIndentation(2, 2, (int)(1/GPO.cellSize), (int)(1/GPO.cellSize), IndentationType.Cube);
+            /*// Add a cubic indentation at grid position (10, 14) with size 4x4 (for example)
+            AddIndentation(2, 2, (int)(1/GPO.cellSize), (int)(1/GPO.cellSize), IndentationType.Cube);*/
+            AddIndentation(2, 2, (int)(2 / GPO.cellSize), (int)(2 / GPO.cellSize), (int)(1 / GPO.cellSize), IndentationType.HexPrism);
 
             // Создание площадки с лунками
             Mesh ground = Mesh.CreateGridPlane(
@@ -93,7 +96,7 @@ namespace test
 
             #region "meshes"
             // Добавление красного куба new Vector3(1f-0.1f, -0.5f, 1f-0.1f)
-            Mesh cube = Mesh.CreateCube(new Vector3(1f-0.1f, 10f, 1f-0.1f), 1, Color.Red);
+            /*Mesh cube = Mesh.CreateCube(new Vector3(1f-0.1f, 10f, 1f-0.1f), 1, Color.Red);
             cube.Name = "«Красный куб»";
             scene.AddObject(cube);
 
@@ -103,10 +106,13 @@ namespace test
 
             Mesh sphere = Mesh.CreateSphere(new Vector3(2.5f, 2f, 2.5f), 0.5f, 10, 10, Color.Yellow);
             sphere.Name = "«Желтая сфера»";
-            scene.AddObject(sphere);
+            scene.AddObject(sphere);*/
 
-            Mesh h = Mesh.CreateHexPrism(new Vector3(4f, 2, 4f), 1f, 1f, Color.Red);
+            /*Mesh h = Mesh.CreateHexPrism(new Vector3(4f, 2, 4f), 1f, 1f, Color.Red);
             h.Name = "«Красный hexagon»";
+            scene.AddObject(h);*/
+            Mesh h = Mesh.CreateCylinder(new Vector3(4f, 2, 4f), 1f, 1f, GPO.SPCPA, Color.Red);
+            h.Name = "«Красный cylinder»";
             scene.AddObject(h);
 
             /*sphere = Mesh.CreateSphere(new Vector3(6, 0.5f, 8.7f), 0.4f, 10, 10, Color.AliceBlue);
@@ -118,7 +124,6 @@ namespace test
             scene.AddObject(sphere);*/
             #endregion
             #region "light"
-            light = new Light(new Vector3(1, 1f, 2f));
             if (debug_mode)
             {
                 Mesh lightSphere = Mesh.CreateSphere(light.Position, 0.5f, 10, 10, Color.Purple);
@@ -128,9 +133,9 @@ namespace test
             #endregion
             #region "camera"
             camera = new Camera(
-                new Vector3(0, 9f, 15),   // Camera position
-                new Vector3(1, 4f, 1),  // Camera target
-                new Vector3(0, 1, 0)   // Up vector
+                new Vector3(0, 9f, 10),   // Camera position
+                new Vector3(-1, 4f, -10),    // Camera target
+                new Vector3(0, 1, 0)      // Up vector
             );
             #endregion
             #region "timer"
@@ -143,6 +148,7 @@ namespace test
             #region "picturebox keyboard set"
             focusForm();
             #endregion
+            StartResearch();
         }
         private void focusForm()
         {
@@ -231,9 +237,23 @@ namespace test
 
             return true;
         }
+        private bool CanPlaceIndentation(int gridX, int gridZ, int width, int depth)
+        {
+            if (gridX < 0 || gridZ < 0 || gridX + width > GPO.gridWidth || gridZ + depth > GPO.gridDepth)
+                return false;
+
+            for (int x = gridX; x < gridX + width; x++)
+                for (int z = gridZ; z < gridZ + depth; z++)
+                    if (gridOccupied[x, z])
+                        return false;
+
+            return true;
+        }
         #endregion
         private void Timer_Tick(object sender, EventArgs e)
         {
+            if (researchStart)
+                return;
             /*light.Position.Z += 0.4f;*/
             angle += 0.01f;
 
@@ -302,13 +322,17 @@ namespace test
                     isSimulationRunning = false;
                     MessageBox.Show("Симуляция завершена.");
                     focusForm();
+                    KP = true;
                 }
             }
 
             // Обновление положения камеры
-            UpdateCamera();
-
-            Render();
+            if (KP || isSimulationRunning)
+            {
+                UpdateCamera();
+                Render();
+                KP = false;
+            }
         }
 
         private void UpdateCamera()
@@ -322,6 +346,7 @@ namespace test
                 camera.Position += direction * cameraSpeed;
                 camera.Target += direction * cameraSpeed;
                 movingForward = false;
+                KP = false;
             }
             if (movingBackward)
             {
@@ -334,12 +359,14 @@ namespace test
                 camera.Position -= right * cameraSpeed;
                 camera.Target -= right * cameraSpeed;
                 movingLeft = false;
+                KP = false;
             }
             if (movingRight)
             {
                 camera.Position += right * cameraSpeed;
                 camera.Target += right * cameraSpeed;
                 movingRight = false;
+                KP = false;
             }
 
             // Rotation around the Y axis (yaw)
@@ -349,6 +376,7 @@ namespace test
                 direction = Vector3.TransformNormal(direction, rotationMatrix);
                 camera.Target = camera.Position + direction;
                 rotatingLeft = false;
+                KP = false;
             }
             if (rotatingRight)
             {
@@ -356,6 +384,7 @@ namespace test
                 direction = Vector3.TransformNormal(direction, rotationMatrix);
                 camera.Target = camera.Position + direction;
                 rotatingRight = false;
+                KP = false;
             }
 
             // Rotation around the right vector (pitch)
@@ -366,6 +395,7 @@ namespace test
                 camera.Up = Vector3.Normalize(Vector3.TransformNormal(camera.Up, rotationMatrix));
                 camera.Target = camera.Position + direction;
                 rotatingUp = false;
+                KP = false;
             }
             if (rotatingDown)
             {
@@ -374,6 +404,7 @@ namespace test
                 camera.Up = Vector3.Normalize(Vector3.TransformNormal(camera.Up, rotationMatrix));
                 camera.Target = camera.Position + direction;
                 rotatingDown = false;
+                KP = false;
             }
         }
 
@@ -553,7 +584,7 @@ namespace test
             float intensity = 0;
 
             // Фоновое освещение
-            float ambient = 0.2f;
+            float ambient = 0.2f * light.Intensity;
             intensity += ambient;
 
             // Направление от точки к источнику света
@@ -571,8 +602,8 @@ namespace test
                 }
                 else
                 {
-                    // Добавляем диффузное освещение
-                    intensity += nDotL;
+                    // Добавляем диффузное освещение с учётом интенсивности света
+                    intensity += nDotL * light.Intensity;
                 }
             }
 
@@ -610,12 +641,8 @@ namespace test
                     Vector3 worldV3 = Vector3.Transform(v3.Position, worldMatrix);
 
                     if (IntersectTriangle(shadowOrigin, dir, worldV1, worldV2, worldV3, out float t))
-                    {
                         if (t > 0 && t < distanceToLight)
-                        {
                             return true;
-                        }
-                    }
                 }
             }
 
@@ -762,6 +789,7 @@ namespace test
                     if (mesh != null)
                     {
                         mesh.Name = name;
+                        KP = true;
                         scene.AddObject(mesh);
                     }
                 }
@@ -797,9 +825,63 @@ namespace test
                         indentationEdges
                     );
                     ground.Name = "Ground";
+                    KP = true;
                     scene.AddObject(ground);
                 }
             }
+        }
+        private void btnGridSettings_Click(object sender, EventArgs e)
+        {
+            using (FieldSettingsForm fieldSettingsForm = new FieldSettingsForm(GPO.gridWidth, GPO.gridDepth, GPO.cellSize))
+            {
+                if (fieldSettingsForm.ShowDialog() == DialogResult.OK)
+                    InitializeGrid(fieldSettingsForm.GridWidth, fieldSettingsForm.GridDepth, fieldSettingsForm.CellSize);
+            }
+        }
+
+        private void InitializeGrid(int width, int depth, float cellSize)
+        {
+            // Обновляем параметры поля
+            GPO.gridWidth = width;
+            GPO.gridDepth = depth;
+            GPO.cellSize = cellSize;
+
+            // Удаляем все лунки
+            foreach (var indentation in indentations.ToList())
+                FreeOccupiedCells(indentation);
+            indentations.Clear();
+
+            // Перестраиваем площадку
+            scene.RemoveObjectByName("Ground");
+            Mesh ground = Mesh.CreateGridPlane(
+                new Vector3(0, 0, 0),
+                GPO.gridWidth,
+                GPO.gridDepth,
+                GPO.cellSize,
+                Color.Green,
+                indentations,
+                indentationEdges
+            );
+            ground.Name = "Ground";
+            scene.AddObject(ground);
+
+            // Обновляем карту занятых клеток
+            gridOccupied = new bool[GPO.gridWidth, GPO.gridDepth];
+
+            // Обновляем камеру (если требуется)
+            camera = new Camera(
+                new Vector3(0, 9f, 10),   // Camera position
+                new Vector3(-1, 4f, -10),    // Camera target
+                new Vector3(0, 1, 0)      // Up vector
+            );
+            /*camera = new Camera(
+                new Vector3(0, 9f, 15),
+                new Vector3(1, 4f, 1),
+                new Vector3(0, 1, 0)
+            );*/
+
+            // Перерисовываем сцену
+            Render();
         }
         #endregion
     }

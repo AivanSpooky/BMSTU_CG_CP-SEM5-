@@ -37,12 +37,12 @@ namespace test.DialogForms
             // Populate colors
             var colors = new List<KeyValuePair<string, Color>>()
             {
-                new KeyValuePair<string, Color>("Red", Color.Red),
-                new KeyValuePair<string, Color>("Green", Color.Green),
-                new KeyValuePair<string, Color>("Blue", Color.Blue),
-                new KeyValuePair<string, Color>("Yellow", Color.Yellow),
-                new KeyValuePair<string, Color>("Magenta", Color.Magenta),
-                new KeyValuePair<string, Color>("Cyan", Color.Cyan)
+                new KeyValuePair<string, Color>("Красный", Color.Red),
+                new KeyValuePair<string, Color>("Зеленый", Color.Green),
+                new KeyValuePair<string, Color>("Синий", Color.Blue),
+                new KeyValuePair<string, Color>("Желтый", Color.Yellow),
+                new KeyValuePair<string, Color>("Фиолетовый", Color.Magenta),
+                new KeyValuePair<string, Color>("Бирюзовый", Color.Cyan)
             };
             comboBoxColor.DataSource = colors;
             comboBoxColor.DisplayMember = "Key";

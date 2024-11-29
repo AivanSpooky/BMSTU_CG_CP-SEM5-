@@ -11,11 +11,15 @@ namespace test
     {
         public Vector3 Position;
         public Vector3 Normal;
+        public bool IsInIndentation { get; set; }
+        public bool IsPerimeter { get; set; }
 
         public Vertex(Vector3 position, Vector3 normal)
         {
             Position = position;
             Normal = normal;
+            IsInIndentation = false;
+            IsPerimeter = false;
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace test
 {
@@ -27,6 +28,12 @@ namespace test
             {
                 Meshes.Remove(meshToRemove);
             }
+        }
+        public void RemoveAllObjectsExcept(string objectName)
+        {
+            var objectsToRemove = Meshes.Where(m => m.Name != objectName).ToList();
+            foreach (var mesh in objectsToRemove)
+                RemoveObjectByName(mesh.Name);
         }
     }
 }
