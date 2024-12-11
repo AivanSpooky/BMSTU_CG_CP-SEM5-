@@ -66,6 +66,18 @@
     <Compile Include="DialogForms\FieldSettingsForm.Designer.cs">
       <DependentUpon>FieldSettingsForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="DialogForms\LightSettingsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="DialogForms\LightSettingsForm.Designer.cs">
+      <DependentUpon>LightSettingsForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="DialogForms\SimulationSettingsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="DialogForms\SimulationSettingsForm.Designer.cs">
+      <DependentUpon>SimulationSettingsForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Enums.cs" />
     <Compile Include="ExtraFuncs\ExtraFuncs.cs">
       <SubType>Form</SubType>
@@ -101,6 +113,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="DialogForms\FieldSettingsForm.resx">
       <DependentUpon>FieldSettingsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="DialogForms\LightSettingsForm.resx">
+      <DependentUpon>LightSettingsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="DialogForms\SimulationSettingsForm.resx">
+      <DependentUpon>SimulationSettingsForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="MainForm\Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>

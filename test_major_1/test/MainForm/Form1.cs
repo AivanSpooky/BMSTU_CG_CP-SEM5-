@@ -5,16 +5,19 @@ using System.Drawing;
 using System.Windows.Forms;
 using System.Linq;
 using test.DialogForms;
+using System.Threading.Tasks;
 
 namespace test
 {
     public partial class Form1 : Form
     {
         Bitmap bitmap;
+        int bitmapH, bitmapW;
+        readonly object _lock = new object();
         float[,] zBuffer;
         Scene scene;
         Camera camera;
-        public static Light light = new Light(new Vector3(1, 1f, 2f));
+        public static Light light = new Light(new Vector3(1, 1f, 5f));
         Timer timer;
         float angle = 0;
         private bool focus = true;
@@ -45,7 +48,7 @@ namespace test
         List<Indentation> indentations;
         private List<(Vector3 Start, Vector3 End)> indentationEdges = new List<(Vector3 Start, Vector3 End)>();
         // === RESEARCH ===
-        public bool researchStart = true;
+        public bool researchStart = false;
         public bool firstPart = false;
         public bool secondPart = true;
         private ResearchType currentResearchType = ResearchType.None;
@@ -60,12 +63,14 @@ namespace test
         public Form1()
         {
             InitializeComponent();
-
+            ChangeFallSpeedLbl();
+            InitializeCameraControlHints();
             // Инициализация графики
             bitmap = new Bitmap(pictureBox1.Width, pictureBox1.Height);
+            bitmapH = pictureBox1.Height;
+            bitmapW = pictureBox1.Width;
             zBuffer = new float[pictureBox1.Width, pictureBox1.Height];
 
-            // Initialize the scene
             scene = new Scene();
 
             // Инициализация карты занятых клеток
@@ -79,7 +84,7 @@ namespace test
 
             /*// Add a cubic indentation at grid position (10, 14) with size 4x4 (for example)
             AddIndentation(2, 2, (int)(1/GPO.cellSize), (int)(1/GPO.cellSize), IndentationType.Cube);*/
-            AddIndentation(2, 2, (int)(2 / GPO.cellSize), (int)(2 / GPO.cellSize), (int)(1 / GPO.cellSize), IndentationType.HexPrism);
+            /*AddIndentation(2, 2, (int)(2 / GPO.cellSize), (int)(2 / GPO.cellSize), IndentationType.Sphere);*/
 
             // Создание площадки с лунками
             Mesh ground = Mesh.CreateGridPlane(
@@ -88,8 +93,8 @@ namespace test
                 GPO.gridDepth,
                 GPO.cellSize,
                 Color.Green,
-                indentations, // Pass the list of indentations
-                indentationEdges // Pass the list to store edges
+                indentations,
+                indentationEdges
             );
             ground.Name = "Ground";
             scene.AddObject(ground);
@@ -111,9 +116,9 @@ namespace test
             /*Mesh h = Mesh.CreateHexPrism(new Vector3(4f, 2, 4f), 1f, 1f, Color.Red);
             h.Name = "«Красный hexagon»";
             scene.AddObject(h);*/
-            Mesh h = Mesh.CreateCylinder(new Vector3(4f, 2, 4f), 1f, 1f, GPO.SPCPA, Color.Red);
+            /*Mesh h = Mesh.CreateCylinder(new Vector3(4f, 2, 4f), 1f, 1f, GPO.SPCPA, Color.Red);
             h.Name = "«Красный cylinder»";
-            scene.AddObject(h);
+            scene.AddObject(h);*/
 
             /*sphere = Mesh.CreateSphere(new Vector3(6, 0.5f, 8.7f), 0.4f, 10, 10, Color.AliceBlue);
             sphere.Name = "Sphere";
@@ -159,21 +164,18 @@ namespace test
         #region Луночка методы
         private void AddIndentation(int gridX, int gridZ, int width, int depth, IndentationType type)
         {
-            // Check if cells are occupied
             for (int x = gridX; x < gridX + width; x++)
             {
                 for (int z = gridZ; z < gridZ + depth; z++)
                 {
                     if (x < 0 || x >= GPO.gridWidth || z < 0 || z >= GPO.gridDepth || gridOccupied[x, z])
                     {
-                        // Cell is occupied or out of bounds
                         Console.WriteLine("Cannot add indentation at ({0}, {1}): cell is occupied or out of bounds", x, z);
                         return;
                     }
                 }
             }
 
-            // Mark cells as occupied
             for (int x = gridX; x < gridX + width; x++)
             {
                 for (int z = gridZ; z < gridZ + depth; z++)
@@ -182,8 +184,7 @@ namespace test
                 }
             }
 
-            // Add indentation
-            Indentation indentation = new Indentation(gridX, gridZ, width, depth, type);
+            Indentation indentation = new Indentation(gridX, gridZ, width, depth, width/2, type);
             indentations.Add(indentation);
         }
         private void AddIndentation(int gridX, int gridZ, int width, int depth, int height, IndentationType type)
@@ -249,6 +250,35 @@ namespace test
 
             return true;
         }
+        private float GetFigureHalfHeight(Mesh mesh)
+        {
+            float halfHeight = 0f;
+            float cellSize = GPO.cellSize;
+
+            switch (mesh.Type)
+            {
+                case FigureType.Cube:
+                    // Высота куба = SizeInCells * cellSize
+                    halfHeight = (mesh.SizeInCells * cellSize) / 2f;
+                    break;
+                case FigureType.Cylinder:
+                case FigureType.HexPrism:
+                    // Высота = HeightInCells * cellSize
+                    halfHeight = (mesh.HeightInCells * cellSize) / 2f;
+                    break;
+                case FigureType.Sphere:
+                    // Для сферы диаметр = RadiusInCells * 2 * cellSize
+                    // Половина высоты (радиус) = RadiusInCells * cellSize
+                    halfHeight = mesh.RadiusInCells * cellSize;
+                    break;
+                default:
+                    // По умолчанию считаем высоту равной одной ячейке
+                    halfHeight = cellSize / 2f;
+                    break;
+            }
+
+            return halfHeight;
+        }
         #endregion
         private void Timer_Tick(object sender, EventArgs e)
         {
@@ -262,30 +292,99 @@ namespace test
                 List<Mesh> meshesToRemove = new List<Mesh>();
                 List<Indentation> indentationsToRemove = new List<Indentation>();
 
-                // Используем копию списка Meshes для итерации
                 var meshesCopy = scene.Meshes.ToList();
 
+                //foreach (var mesh in meshesCopy)
+                //{
+                //    if (mesh.Type != FigureType.Default)
+                //    {
+                //        // Обновляем позицию фигуры
+                //        mesh.Position -= new Vector3(0, fallSpeed, 0);
+
+                //        // Проверяем столкновение с площадкой!!!!!!!!!!!!!
+                //        if (mesh.Position.Y <= 0)
+                //        {
+                //            // Проверяем попадание в лунку
+                //            if (CheckFigureCollision(mesh, meshesToRemove, indentationsToRemove))
+                //            {
+                //                // Если фигура обработана, удаляем её из списка на дальнейшую обработку
+                //                meshesToRemove.Add(mesh);
+                //            }
+                //        }
+                //    }
+                //}
                 foreach (var mesh in meshesCopy)
                 {
                     if (mesh.Type != FigureType.Default)
                     {
-                        // Обновляем позицию фигуры
+                        // Обновляем позицию фигуры (центр)
                         mesh.Position -= new Vector3(0, fallSpeed, 0);
 
-                        // Проверяем столкновение с площадкой
-                        if (mesh.Position.Y <= 0)
+                        float halfHeight = GetFigureHalfHeight(mesh);
+
+                        // Определяем, есть ли под фигурой лунка
+                        Indentation matchedIndentation = null;
+                        float indentationBottomY = 0f; // По умолчанию дно - это поверхность (Y=0)
+
+                        foreach (var indentation in indentations)
                         {
-                            // Проверяем попадание в лунку
-                            if (CheckFigureCollision(mesh, meshesToRemove, indentationsToRemove))
+                            float indentationXStart = indentation.GridX * GPO.cellSize;
+                            float indentationXEnd = (indentation.GridX + indentation.Width) * GPO.cellSize;
+                            float indentationZStart = indentation.GridZ * GPO.cellSize;
+                            float indentationZEnd = (indentation.GridZ + indentation.Depth) * GPO.cellSize;
+                            float oneLineSize = mesh.RadiusInCells * GPO.cellSize;
+
+                            if (mesh.Position.X - oneLineSize >= indentationXStart && mesh.Position.X + oneLineSize <= indentationXEnd &&
+                                mesh.Position.Z - oneLineSize >= indentationZStart && mesh.Position.Z + oneLineSize <= indentationZEnd)
                             {
-                                // Если фигура обработана, удаляем её из списка на дальнейшую обработку
-                                meshesToRemove.Add(mesh);
+                                matchedIndentation = indentation;
+                                // Дно лунки ниже нуля на её высоту
+                                indentationBottomY = -indentation.Height * GPO.cellSize;
+                                if (indentation.Type == IndentationType.Sphere)
+                                    indentationBottomY *= 2;
+                                Console.WriteLine(indentationBottomY);
+                                break;
+                            }
+                        }
+
+                        // Если нет лунки и фигура пытается уйти ниже нуля
+                        // Нижняя грань фигуры = mesh.Position.Y - halfHeight
+                        // Если нижняя грань < 0 => зафиксируем фигуру, чтобы нижняя грань = 0
+                        if (matchedIndentation == null)
+                        {
+                            float bottomY = mesh.Position.Y - halfHeight;
+                            if (bottomY < 0)
+                            {
+                                mesh.Position = new Vector3(mesh.Position.X, halfHeight, mesh.Position.Z);
+                                if (CheckFigureCollision(mesh, meshesToRemove, indentationsToRemove))
+                                {
+                                    meshesToRemove.Add(mesh);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Есть лунка. Фигура должна падать до дна лунки.
+                            // Нижняя грань фигуры = mesh.Position.Y - halfHeight
+                            // Если нижняя грань <= indentationBottomY, фиксируем на дне лунки
+                            float bottomY = mesh.Position.Y - halfHeight;
+                            if (bottomY <= indentationBottomY)
+                            {
+                                // Ставим нижнюю грань на дно лунки
+                                // bottomY = indentationBottomY => mesh.Position.Y = indentationBottomY + halfHeight
+                                mesh.Position = new Vector3(mesh.Position.X, indentationBottomY + halfHeight, mesh.Position.Z);
+
+                                // Проверяем коллизию с лункой
+                                if (CheckFigureCollision(mesh, meshesToRemove, indentationsToRemove))
+                                {
+                                    meshesToRemove.Add(mesh);
+                                }
+                                // Иначе фигура остаётся лежать на дне лунки
                             }
                         }
                     }
                 }
 
-                // Удаляем фигуры из сцены
                 foreach (var mesh in meshesToRemove)
                 {
                     scene.RemoveObjectByName(mesh.Name);
@@ -297,11 +396,9 @@ namespace test
                     foreach (var indentation in indentationsToRemove)
                     {
                         indentations.Remove(indentation);
-                        // Free up the occupied cells
                         FreeOccupiedCells(indentation);
                     }
 
-                    // Rebuild the ground mesh
                     scene.RemoveObjectByName("Ground");
                     Mesh ground = Mesh.CreateGridPlane(
                         new Vector3(0, 0, 0),
@@ -329,6 +426,7 @@ namespace test
             // Обновление положения камеры
             if (KP || isSimulationRunning)
             {
+                //Console.WriteLine("adf");
                 UpdateCamera();
                 Render();
                 KP = false;
@@ -340,7 +438,6 @@ namespace test
             Vector3 direction = Vector3.Normalize(camera.Target - camera.Position);
             Vector3 right = Vector3.Normalize(Vector3.Cross(direction, camera.Up));
 
-            // Movement
             if (movingForward)
             {
                 camera.Position += direction * cameraSpeed;
@@ -369,7 +466,6 @@ namespace test
                 KP = false;
             }
 
-            // Rotation around the Y axis (yaw)
             if (rotatingLeft)
             {
                 Matrix4x4 rotationMatrix = Matrix4x4.CreateFromAxisAngle(camera.Up, rotationSpeed);
@@ -387,7 +483,6 @@ namespace test
                 KP = false;
             }
 
-            // Rotation around the right vector (pitch)
             if (rotatingUp)
             {
                 Matrix4x4 rotationMatrix = Matrix4x4.CreateFromAxisAngle(right, rotationSpeed);
@@ -411,25 +506,28 @@ namespace test
         private void Render()
         {
             // Clear buffers
-            Graphics g = Graphics.FromImage(bitmap);
-            g.Clear(Color.Black);
+            Graphics g;
+            //lock (bitmap)
+            g = Graphics.FromImage(bitmap);
+            lock (g)
+                g.Clear(Color.Azure);
+            if (debug_mode)
+                g.Clear(Color.Black);
             for (int i = 0; i < zBuffer.GetLength(0); i++)
                 for (int j = 0; j < zBuffer.GetLength(1); j++)
                     zBuffer[i, j] = float.MaxValue;
 
-            // Transformation matrices
             Matrix4x4 viewMatrix = Matrix4x4.CreateLookAt(camera.Position, camera.Target, camera.Up);
-            float aspectRatio = (float)bitmap.Width / bitmap.Height;
+            float aspectRatio = (float)bitmapW / bitmapH;
             Matrix4x4 projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(
                 (float)Math.PI / 2, aspectRatio, 0.1f, 100f
             );
-
             Matrix4x4 viewportMatrix = new Matrix4x4(
-                bitmap.Width / 2f, 0, 0, bitmap.Width / 2f,
-                0, -bitmap.Height / 2f, 0, bitmap.Height / 2f,
-                0, 0, 1, 0,
-                0, 0, 0, 1
-            );
+                    bitmapW / 2f, 0, 0, bitmapW / 2f,
+                    0, -bitmapH / 2f, 0, bitmapH / 2f,
+                    0, 0, 1, 0,
+                    0, 0, 0, 1
+                );
 
             if (debug_mode)
                 foreach (var mesh in scene.Meshes)
@@ -474,6 +572,8 @@ namespace test
             else
                 foreach (var mesh in scene.Meshes)
                 {
+                    //    Parallel.ForEach(scene.Meshes, mesh =>
+                    //{
                     // Use the mesh's color
                     Color objectColor = mesh.Color;
 
@@ -484,7 +584,9 @@ namespace test
                     Matrix4x4 worldMatrix = Matrix4x4.CreateFromQuaternion(mesh.Rotation) *
                                             Matrix4x4.CreateTranslation(mesh.Position);
 
-                    foreach (var face in mesh.Faces)
+                    //foreach (var face in mesh.Faces)
+                    //{
+                    Parallel.ForEach(mesh.Faces, face =>
                     {
                         // Получаем вершины треугольника
                         Vertex v1 = mesh.Vertices[face.A];
@@ -507,16 +609,13 @@ namespace test
 
                         if (useGouraudShading)
                         {
-                            // Освещённость для каждой вершины (Gouraud Shading)
+                            // Освещённость для каждой вершины по Гуро
                             i1 = ComputeLighting(worldV1, Vector3.Normalize(Vector3.TransformNormal(v1.Normal, worldMatrix)));
                             i2 = ComputeLighting(worldV2, Vector3.Normalize(Vector3.TransformNormal(v2.Normal, worldMatrix)));
                             i3 = ComputeLighting(worldV3, Vector3.Normalize(Vector3.TransformNormal(v3.Normal, worldMatrix)));
                         }
-                        else
-                        {
-                            // Плоское освещение (Flat Shading)
+                        else // Плоское освещение (Flat Shading)
                             intensity = ComputeLighting(worldV1, faceNormal);
-                        }
 
                         // Проецируем вершины
                         Vector4 projV1 = Vector4.Transform(new Vector4(worldV1, 1), viewMatrix * projectionMatrix);
@@ -524,23 +623,25 @@ namespace test
                         Vector4 projV3 = Vector4.Transform(new Vector4(worldV3, 1), viewMatrix * projectionMatrix);
 
                         if (projV1.W <= 0 || projV2.W <= 0 || projV3.W <= 0)
-                            continue;
-
-                        projV1 /= projV1.W;
-                        projV2 /= projV2.W;
-                        projV3 /= projV3.W;
-
-                        // Преобразуем в экранные координаты
-                        Vector3 screenV1 = Vector3.Transform(projV1.XYZ(), viewportMatrix);
-                        Vector3 screenV2 = Vector3.Transform(projV2.XYZ(), viewportMatrix);
-                        Vector3 screenV3 = Vector3.Transform(projV3.XYZ(), viewportMatrix);
-
-                        if (useGouraudShading)
+                            ;
+                        else
                         {
-                            // Закрашиваем треугольник с использованием Гуро освещения
-                            DrawTriangle(screenV1, screenV2, screenV3, i1, i2, i3, objectColor);
+                            projV1 /= projV1.W;
+                            projV2 /= projV2.W;
+                            projV3 /= projV3.W;
+
+                            // Преобразуем в экранные координаты
+                            Vector3 screenV1 = Vector3.Transform(projV1.XYZ(), viewportMatrix);
+                            Vector3 screenV2 = Vector3.Transform(projV2.XYZ(), viewportMatrix);
+                            Vector3 screenV3 = Vector3.Transform(projV3.XYZ(), viewportMatrix);
+
+                            // Закрашиваем треугольник по Гуро
+                            if (useGouraudShading)
+                                DrawTriangle(screenV1, screenV2, screenV3, i1, i2, i3, objectColor);
                         }
-                    }
+                    });
+                //}
+                    //});
                 }
 
             // Draw indentation wireframes if debug flag is true
@@ -550,7 +651,8 @@ namespace test
             }
 
             // Update PictureBox
-            pictureBox1.Image = bitmap;
+            lock (bitmap) lock (pictureBox1)
+                pictureBox1.Image = bitmap;
         }
 
         private void DrawIndentationWireframes(Graphics g, Matrix4x4 viewportMatrix, Matrix4x4 viewMatrix, Matrix4x4 projectionMatrix)
@@ -574,7 +676,8 @@ namespace test
                     Vector3 screenEnd = Vector3.Transform(projEnd.XYZ(), viewportMatrix);
 
                     // Draw the line in black
-                    g.DrawLine(wireframePen, screenStart.X, screenStart.Y, screenEnd.X, screenEnd.Y);
+                    lock (g)
+                        g.DrawLine(wireframePen, screenStart.X, screenStart.Y, screenEnd.X, screenEnd.Y);
                 }
             }
         }
@@ -696,9 +799,12 @@ namespace test
             }
 
             int yStart = (int)Math.Max(0, Math.Ceiling(v1.Y));
-            int yEnd = (int)Math.Min(bitmap.Height - 1, Math.Floor(v3.Y));
+            int yEnd;
+            yEnd = (int)Math.Min(bitmapH - 1, Math.Floor(v3.Y));
 
-            for (int y = yStart; y <= yEnd; y++)
+            //for (int y = yStart; y <= yEnd; y++)
+            //{
+            Parallel.For(yStart, yEnd + 1, (y, state) =>
             {
                 bool secondHalf = y > v2.Y || v2.Y == v1.Y;
                 float segmentHeight = secondHalf ? v3.Y - v2.Y : v2.Y - v1.Y;
@@ -719,7 +825,8 @@ namespace test
                 }
 
                 int xStart = (int)Math.Max(0, Math.Ceiling(A.X));
-                int xEnd = (int)Math.Min(bitmap.Width - 1, Math.Floor(B.X));
+                int xEnd;
+                xEnd = (int)Math.Min(bitmapW - 1, Math.Floor(B.X)); //!
 
                 for (int x = xStart; x <= xEnd; x++)
                 {
@@ -729,22 +836,24 @@ namespace test
 
                     int zIndex = x;
                     int yIndex = y;
-                    if (zIndex < 0 || zIndex >= bitmap.Width || yIndex < 0 || yIndex >= bitmap.Height)
+                    if (zIndex < 0 || zIndex >= bitmapW || yIndex < 0 || yIndex >= bitmapH)
                         continue;
-
-                    if (P.Z < zBuffer[zIndex, yIndex])
+                    lock (zBuffer)
+                        if (P.Z < zBuffer[zIndex, yIndex])
                     {
-                        zBuffer[zIndex, yIndex] = P.Z;
+                        lock (zBuffer)
+                            zBuffer[zIndex, yIndex] = P.Z;
 
                         // Применяем интенсивность к цвету объекта
                         int r = (int)(objectColor.R * Clamp(iP, 0, 1));
                         int g = (int)(objectColor.G * Clamp(iP, 0, 1));
                         int b = (int)(objectColor.B * Clamp(iP, 0, 1));
-
-                        bitmap.SetPixel(zIndex, yIndex, Color.FromArgb(r, g, b));
+                        lock (_lock)
+                            bitmap.SetPixel(zIndex, yIndex, Color.FromArgb(r, g, b));
                     }
                 }
-            }
+            });
+            //}
         }
 
         #region Кнопки
@@ -883,6 +992,76 @@ namespace test
             // Перерисовываем сцену
             Render();
         }
+        private void btnLightSettings_Click(object sender, EventArgs e)
+        {
+            using (LightSettingsForm lightSettingsForm = new LightSettingsForm())
+            {
+                lightSettingsForm.tbX.Text = light.Position.X.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                lightSettingsForm.tbY.Text = light.Position.Y.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                lightSettingsForm.tbZ.Text = light.Position.Z.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                lightSettingsForm.tbI.Text = light.Intensity.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+                if (lightSettingsForm.ShowDialog() == DialogResult.OK)
+                {
+                    Vector3 newPosition = lightSettingsForm.Pos;
+                    float newIntensity = lightSettingsForm.Intensity;
+                    light.Position = newPosition;
+                    light.Intensity = newIntensity;
+                    if (debug_mode)
+                    {
+                        scene.RemoveObjectByName("LightSphere");
+                        Mesh newLightSphere = Mesh.CreateSphere(light.Position, 0.5f, 10, 10, Color.Purple);
+                        newLightSphere.Name = "LightSphere";
+                        scene.AddObject(newLightSphere);
+                    }
+                    Render();
+                }
+            }
+        }
+        private void btnCamBack_Click(object sender, EventArgs e)
+        {
+            camera = new Camera(
+                new Vector3(0, 9f, 10),
+                new Vector3(-1, 4f, -10),
+                new Vector3(0, 1, 0)
+            );
+            Render();
+        }
+        private void btnSimSettings_Click(object sender, EventArgs e)
+        {
+            using (SimulationSettingsForm simSettingsForm = new SimulationSettingsForm())
+            {
+                simSettingsForm.tbFS.Text = fallSpeed.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                if (simSettingsForm.ShowDialog() == DialogResult.OK)
+                {
+                    fallSpeed = simSettingsForm.FallSpeed;
+                    ChangeFallSpeedLbl();
+                }
+            }
+        }
         #endregion
+        #region Подсказки
+        private void InitializeCameraControlHints()
+        {
+            lblCamHints.ForeColor = Color.White;
+            lblCamHints.BackColor = Color.FromArgb(128, 0, 0, 0);
+            lblSimInfo.ForeColor = Color.White;
+            lblSimInfo.BackColor = Color.FromArgb(128, 0, 0, 0);
+        }
+        #endregion
+
+
+
+        
+
+        private void ChangeFallSpeedLbl()
+        {
+            lblSimInfo.Text = $"Параметры симуляции:\n скорость падения = {fallSpeed}";
+        }
+
+        private void label2_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }

@@ -40,6 +40,9 @@ namespace test
                                     y = CalculateSphericalIndentationY(i, j, indentation, cellSize, out normal);
                                     break;
                                 case IndentationType.Cube:
+                                    y = -indentation.Width * cellSize;
+                                    normal = Vector3.UnitY;
+                                    break;
                                 case IndentationType.HexPrism:
                                 case IndentationType.Cylinder:
                                     y = -indentation.Height * cellSize;
@@ -286,7 +289,7 @@ namespace test
                 Vertex vNext = vertices[next.i, next.j];
 
                 // Define the lower vertices based on indentation depth
-                float indentationY = -indentation.Depth * cellSize;
+                float indentationY = -indentation.Depth;//* cellSize;
 
                 Vector3 vCurrentLower = new Vector3(vCurrent.Position.X, indentationY, vCurrent.Position.Z);
                 Vector3 vNextLower = new Vector3(vNext.Position.X, indentationY, vNext.Position.Z);
@@ -339,7 +342,7 @@ namespace test
                 // Normal is the normalized vector from the sphere center to the point
                 normal = Vector3.Normalize(new Vector3(dx, y, dz));
 
-                return y * cellSize; // Scale Y-coordinate
+                return y;//* cellSize; // Scale Y-coordinate
             }
             else
             {
@@ -372,7 +375,7 @@ namespace test
             }
 
             float indentationY = -indentation.Height * cellSize;
-
+            float offset = 0.05f * cellSize;
             // Опускаем вершины внутри шестиугольника
             for (int i = 0; i < vertices.GetLength(0); i++)
             {
@@ -398,6 +401,11 @@ namespace test
                 Vector3 topNext = new Vector3(hexVertices[next].X, 0, hexVertices[next].Y);
                 Vector3 bottomCurrent = new Vector3(hexVertices[i].X, indentationY, hexVertices[i].Y);
                 Vector3 bottomNext = new Vector3(hexVertices[next].X, indentationY, hexVertices[next].Y);
+                // Смещение относительно центра луночки
+                topCurrent = MovePointOutward(topCurrent, centerX, centerZ, offset);
+                topNext = MovePointOutward(topNext, centerX, centerZ, offset);
+                bottomCurrent = MovePointOutward(bottomCurrent, centerX, centerZ, offset);
+                bottomNext = MovePointOutward(bottomNext, centerX, centerZ, offset);
 
                 // Проверка положения света относительно стенки
                 Vector3 wallCenter = (topCurrent + bottomCurrent) / 2;
@@ -429,7 +437,17 @@ namespace test
                 indentationEdges.Add((bottomCurrent, topCurrent));
             }
         }
-
+        private static Vector3 MovePointOutward(Vector3 point, float centerX, float centerZ, float offset)
+        {
+            Vector3 direction = new Vector3(point.X - centerX, 0, point.Z - centerZ);
+            float length = direction.Length();
+            if (length > 0)
+            {
+                direction = Vector3.Normalize(direction);
+                return point + direction * offset;
+            }
+            return point; // Если точка совпадает с центром, смещения не будет
+        }
         private static bool IsPointInPolygon(Vector2 point, List<Vector2> polygon)
         {
             int crossings = 0;
@@ -467,7 +485,7 @@ namespace test
 
             int gridWidth = vertices.GetLength(0) - 1;
             int gridDepth = vertices.GetLength(1) - 1;
-
+            float offset = 0.05f * cellSize;
             // Опускаем вершины внутри круга
             for (int i = 0; i <= gridWidth; i++)
             {
@@ -502,6 +520,10 @@ namespace test
                 Vector3 topNext = perimeterVertices[(idx + 1) % perimeterVertices.Count];
                 Vector3 bottomCurrent = new Vector3(topCurrent.X, indentationY, topCurrent.Z);
                 Vector3 bottomNext = new Vector3(topNext.X, indentationY, topNext.Z);
+                topCurrent = MovePointOutward(topCurrent, centerX, centerZ, offset);
+                topNext = MovePointOutward(topNext, centerX, centerZ, offset);
+                bottomCurrent = MovePointOutward(bottomCurrent, centerX, centerZ, offset);
+                bottomNext = MovePointOutward(bottomNext, centerX, centerZ, offset);
 
                 Vector3 wallCenter = (topCurrent + bottomCurrent) / 2;
                 Vector3 lightDirection = lightPosition - wallCenter;
@@ -527,14 +549,6 @@ namespace test
                 indentationEdges.Add((bottomNext, bottomCurrent));
                 indentationEdges.Add((bottomCurrent, topCurrent));
             }
-        }
-
-        // Метод проверки, находится ли точка внутри окружности
-        private static bool IsPointInCircle(float x, float z, float centerX, float centerZ, float radius)
-        {
-            float dx = x - centerX;
-            float dz = z - centerZ;
-            return (dx * dx + dz * dz) <= radius * radius;
         }
         #endregion
     }

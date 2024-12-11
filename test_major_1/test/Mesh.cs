@@ -44,6 +44,7 @@ namespace test
             mesh.Type = FigureType.Cube;
             mesh.Position = position;
             mesh.SizeInCells = size / GPO.cellSize;
+            mesh.RadiusInCells = size / GPO.cellSize;
 
             float half = size / 2;
 
@@ -189,9 +190,8 @@ namespace test
             mesh.RadiusInCells = size / GPO.cellSize;
             mesh.HeightInCells = height / GPO.cellSize;
 
-            // Calculate the vertices for the top and bottom hexagons
             List<Vertex> vertices = new List<Vertex>();
-            float angleIncrement = (float)(Math.PI / 3); // 60 degrees
+            float angleIncrement = (float)(Math.PI / 3); // 60 градусов
 
             // Top and bottom vertices
             for (int i = 0; i < 6; i++)

@@ -36,10 +36,10 @@ namespace test
                 float indentationXEnd = (indentation.GridX + indentation.Width) * GPO.cellSize;
                 float indentationZStart = indentation.GridZ * GPO.cellSize;
                 float indentationZEnd = (indentation.GridZ + indentation.Depth) * GPO.cellSize;
+                float oneLineSize = mesh.RadiusInCells * GPO.cellSize;
 
-                // Check if the figure is within the indentation boundaries
-                if (figurePosition.X >= indentationXStart && figurePosition.X <= indentationXEnd &&
-                    figurePosition.Z >= indentationZStart && figurePosition.Z <= indentationZEnd)
+                if (figurePosition.X - oneLineSize >= indentationXStart && figurePosition.X + oneLineSize <= indentationXEnd &&
+                    figurePosition.Z - oneLineSize >= indentationZStart && figurePosition.Z + oneLineSize <= indentationZEnd)
                 {
                     isInIndentation = true;
                     stopTimer();
@@ -57,7 +57,7 @@ namespace test
                         else if (mesh.Type == FigureType.Cylinder || mesh.Type == FigureType.HexPrism)
                         {
                             figureWidth = figureDepth = mesh.RadiusInCells * 2;
-                            figureHeight = mesh.HeightInCells;
+                            figureHeight = mesh.HeightInCells * 2;
                         }
                         else if (mesh.Type == FigureType.Sphere)
                         {
@@ -77,7 +77,7 @@ namespace test
                         // Only compare heights if the indentation has a non-zero height
                         if (indentation.Height > 0)
                         {
-                            sizesMatch = sizesMatch && Math.Abs(figureHeight - indentation.Height) < 0.1f;
+                            sizesMatch = sizesMatch && Math.Abs(figureHeight/2 - indentation.Height) < 0.1f;
                         }
 
                         Console.WriteLine($"{figureWidth} {indentation.Width} {figureDepth} {indentation.Depth} {figureHeight} {indentation.Height}");

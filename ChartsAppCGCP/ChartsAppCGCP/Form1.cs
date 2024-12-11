@@ -47,7 +47,7 @@ namespace ChartsAppCGCP
             // Настройка осей в зависимости от флага objs
             if (objs)
             {
-                chartArea.AxisX.Title = "Количество объектов";
+                chartArea.AxisX.Title = "Количество тел";
                 chartArea.AxisY.Title = "Время (мкс)";
             }
             else
@@ -79,14 +79,14 @@ namespace ChartsAppCGCP
             {
                 AddSeries("Кубы", cubesFilePath, Color.Red);
                 AddSeries("Сферы", spheresFilePath, Color.Blue);
-                AddSeries("Шестиугольные призмы", hexPrismsFilePath, Color.Green);
+                AddSeries("Шестигранные призмы", hexPrismsFilePath, Color.Green);
                 AddSeries("Цилиндры", cylindersFilePath, Color.Purple);
             }
             else
             {
                 AddSeries("Лунки-Кубы", cubesIndsFilePath, Color.Red);
                 AddSeries("Лунки-Сферы", spheresIndsFilePath, Color.Blue);
-                AddSeries("Лунки-Шестиугольные призмы", hexPrismsIndsFilePath, Color.Green);
+                AddSeries("Лунки-Шестигранные призмы", hexPrismsIndsFilePath, Color.Green);
                 AddSeries("Лунки-Цилиндры", cylindersIndsFilePath, Color.Purple);
             }
         }

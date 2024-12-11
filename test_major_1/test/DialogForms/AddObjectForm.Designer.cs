@@ -105,7 +105,7 @@
             this.groupBox8.Size = new System.Drawing.Size(229, 76);
             this.groupBox8.TabIndex = 14;
             this.groupBox8.TabStop = false;
-            this.groupBox8.Text = "Размер объекта";
+            this.groupBox8.Text = "Размер тела";
             // 
             // numericUpDownSize
             // 
@@ -125,7 +125,7 @@
             this.groupBox4.Size = new System.Drawing.Size(229, 82);
             this.groupBox4.TabIndex = 13;
             this.groupBox4.TabStop = false;
-            this.groupBox4.Text = "Координаты объекта";
+            this.groupBox4.Text = "Координаты тела";
             // 
             // groupBox7
             // 
@@ -190,7 +190,7 @@
             this.groupBox3.Size = new System.Drawing.Size(229, 76);
             this.groupBox3.TabIndex = 12;
             this.groupBox3.TabStop = false;
-            this.groupBox3.Text = "Имя объекта";
+            this.groupBox3.Text = "Имя тела";
             // 
             // textBoxName
             // 
@@ -208,7 +208,7 @@
             this.groupBox2.Size = new System.Drawing.Size(229, 76);
             this.groupBox2.TabIndex = 11;
             this.groupBox2.TabStop = false;
-            this.groupBox2.Text = "Цвет объекта";
+            this.groupBox2.Text = "Цвет тела";
             // 
             // comboBoxColor
             // 
@@ -227,7 +227,7 @@
             this.groupBox1.Size = new System.Drawing.Size(229, 76);
             this.groupBox1.TabIndex = 10;
             this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Тип объекта";
+            this.groupBox1.Text = "Тип тела";
             // 
             // comboBoxObjectType
             // 
@@ -247,7 +247,7 @@
             this.groupBox10.Size = new System.Drawing.Size(229, 76);
             this.groupBox10.TabIndex = 16;
             this.groupBox10.TabStop = false;
-            this.groupBox10.Text = "Высота объекта";
+            this.groupBox10.Text = "Высота тела";
             // 
             // numericUpDownHeight
             // 
@@ -270,7 +270,7 @@
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
             this.Name = "AddObjectForm";
-            this.Text = "AddObjectForm";
+            this.Text = "Добавить тело";
             this.Load += new System.EventHandler(this.AddObjectForm_Load);
             this.groupBox9.ResumeLayout(false);
             this.groupBox8.ResumeLayout(false);

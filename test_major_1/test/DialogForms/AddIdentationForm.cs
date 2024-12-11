@@ -43,7 +43,7 @@ namespace test.DialogForms
                 case IndentationType.Sphere:
                     return "Сферическая";
                 case IndentationType.HexPrism:
-                    return "Для шестиугольной призмы";
+                    return "Для шестигранной призмы";
                 case IndentationType.Cylinder:
                     return "Цилиндрическая";
                 default:

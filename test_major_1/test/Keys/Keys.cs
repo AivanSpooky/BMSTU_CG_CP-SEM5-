@@ -12,7 +12,7 @@ namespace test
         public static int gridWidth = 20;     // количество клеток по X
         public static int gridDepth = 20;     // количество клеток по Z
         public static float cellSize = 0.25f; // размер каждой клетки
-        public static int SPCPA = 10;         // Spheric Polygon Count Per Axis - количество полигонов на ось для сферических объектов
+        public static int SPCPA = 20;         // Spheric Polygon Count Per Axis - количество полигонов на ось для сферических объектов
     }
     public partial class Form1 : Form
     {

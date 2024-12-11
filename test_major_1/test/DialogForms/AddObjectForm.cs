@@ -61,7 +61,7 @@ namespace test.DialogForms
                 case FigureType.Sphere:
                     return "Сфера";
                 case FigureType.HexPrism:
-                    return "Шестиугольная призма";
+                    return "Шестигранная призма";
                 case FigureType.Cylinder:
                     return "Цилиндр";
                 default:
@@ -86,12 +86,33 @@ namespace test.DialogForms
                 MessageBox.Show("Размер должен быть больше 0!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
+            if (textBoxName.Text.Length == 0)
+            {
+                MessageBox.Show("У тела должно быть имя!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
             if (SelectedFigureType == FigureType.Cylinder || SelectedFigureType == FigureType.HexPrism)
+            {
                 if (HeightInCells <= 0)
                 {
                     MessageBox.Show("Высота должна быть больше 0!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
+                if (y - HeightInCells * GPO.cellSize / 2 < 0)
+                {
+                    MessageBox.Show("Возможно, тело проходит через поверхность. Поставьте больше значение y!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+            }
+            else
+            {
+                if (y - ObjSize / 2 < 0)
+                {
+                    MessageBox.Show("Возможно, тело проходит через поверхность. Поставьте больше значение y!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+            }
+            
 
             DialogResult = DialogResult.OK;
             Close();

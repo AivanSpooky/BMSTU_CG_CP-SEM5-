@@ -12,7 +12,7 @@ namespace test
         public Vector3 Position;
         public float Intensity;
 
-        public Light(Vector3 position, float intensity = 1.0f)
+        public Light(Vector3 position, float intensity = 1f)
         {
             Position = position;
             Intensity = intensity;

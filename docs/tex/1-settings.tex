@@ -1,0 +1,110 @@
+\usepackage{cmap} % Улучшенный поиск русских слов в PDF
+\usepackage[T2A]{fontenc} % Поддержка русских букв
+\usepackage[utf8]{inputenc} % Кодировка UTF-8
+\usepackage[english,russian]{babel} % Языки: русский, английский
+\usepackage{ulem} % Для подчёркивания текста
+\usepackage{svg}
+
+\usepackage[14pt]{extsizes} % Шрифт 14 по ГОСТ 7.32-2001
+
+\usepackage{xcolor} % Цвета
+\usepackage{graphicx} % Работа с изображениями
+\usepackage{pgfplots} % Графики
+\usetikzlibrary{datavisualization}
+\usetikzlibrary{datavisualization.formats.functions}
+
+\newcommand{\img}[3]{ % Команда для вставки изображений
+    \begin{figure}[h!]
+        \centering
+        \includegraphics[height=#1]{img/#2}
+        \caption{#3}
+        \label{img:#2}
+    \end{figure}
+}
+
+\usepackage[justification=centering]{caption} % Настройка подписей к рисункам и таблицам
+\captionsetup{labelsep=endash} % Разделитель между номером и текстом
+\captionsetup[figure]{name={Рисунок}} % Переименование "Figure" на "Рисунок"
+\captionsetup[table]{singlelinecheck=false, labelsep=endash} % Настройки для таблиц
+
+\usepackage{amsmath} % Математические формулы
+\usepackage{amsfonts} % Дополнительные математические шрифты
+\makeatletter
+\newcommand*{\rom}[1]{\expandafter\@slowromancap\romannumeral #1@} % Римские цифры
+\makeatother
+
+\usepackage{geometry} % Поля страницы
+\geometry{
+    left=20mm,
+    right=10mm,
+    top=20mm,
+    bottom=20mm
+}
+\setlength{\parindent}{1.25cm} % Отступ первой строки абзаца
+
+\usepackage{setspace} % Интерлиньяж
+\onehalfspacing % Полуторный интервал
+
+\frenchspacing % Одинаковые пробелы между словами и предложениями
+\usepackage{indentfirst} % Красная строка для первого абзаца
+
+\usepackage{titlesec} % Форматирование заголовков
+\titleformat{\chapter}{\LARGE\bfseries}{\thechapter}{20pt}{\LARGE\bfseries}
+\titleformat{\section}{\Large\bfseries}{\thesection}{20pt}{\Large\bfseries}
+\titlespacing*{\chapter}{0pt}{-30pt}{8pt}
+\titlespacing*{\section}{\parindent}{*4}{*4}
+\titlespacing*{\subsection}{\parindent}{*4}{*4}
+
+\usepackage{multirow} % Объединение строк в таблицах
+\usepackage{listings} % Вставка листингов кода
+
+% Настройки для листингов кода
+\lstset{
+    language=C,   					% Язык программирования
+    basicstyle=\small\sffamily,			% Шрифт и размер текста
+    numbers=left,						% Нумерация строк слева
+    stepnumber=1,						% Шаг между номерами строк
+    numbersep=5pt,						% Отступ нумерации от кода
+    frame=single,						% Рамка вокруг кода
+    tabsize=4,							% Размер табуляции
+    captionpos=t,						% Позиция заголовка
+    breaklines=true,					% Перенос длинных строк
+    breakatwhitespace=true,				% Переносить строки только на пробелах
+    escapeinside={\#*}{*)},				% Специальные символы в комментариях
+    backgroundcolor=\color{white},      % Цвет фона
+}
+
+\usepackage[unicode,pdftex]{hyperref} % Гиперссылки в PDF
+\hypersetup{hidelinks}
+
+\usepackage{csvsimple} % Работа с CSV-файлами
+\newcommand{\code}[1]{\texttt{#1}} % Команда для отображения кода внутри текста
+
+% Дополнительные пакеты из первого файла, если они необходимы
+\usepackage{tabularx} % Расширенные возможности таблиц
+\usepackage{longtable} % Длинные таблицы
+\usepackage{array} % Дополнительные возможности для массивов и таблиц
+\usepackage{float} % Дополнительные возможности размещения плавающих объектов
+\usepackage{threeparttable} % Для подписей в таблицах
+\usepackage{adjustbox} % Подгонка размеров объектов
+\usepackage{ragged2e} % Выравнивание текста
+\usepackage{pdfpages} % Вставка страниц PDF
+\usepackage{blindtext} % Генерация текста-заполнителя
+
+% Если требуются специальные настройки для списков
+\usepackage{enumitem}
+\setenumerate[0]{label=\arabic*)} % Нумерация списков арабскими цифрами
+% \renewcommand{\labelitemi}{---} % Маркер для ненумерованных списков
+
+% Если используются дополнительные математические операторы
+\usepackage{mathtools}
+\DeclareMathOperator{\rank}{rank} % Определение оператора ранга
+
+% Если требуется переопределение команды \underset для использования вне математического режима
+\renewcommand{\underset}[2]{\ensuremath{\mathop{\mbox{#2}}\limits_{\mbox{\scriptsize #1}}}}
+
+% Если используется команда \ulinetext из первого файла
+\usepackage{xparse}
+\NewDocumentCommand{\ulinetext}{O{3cm} O{c} m m}{
+    \underset{#3}{\uline{\makebox[#1][#2]{#4}}}
+}

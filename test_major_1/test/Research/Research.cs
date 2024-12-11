@@ -198,19 +198,17 @@ namespace test
 
         private void PopulateIndentationsSequentially(int totalIndentations, IndentationType specificType)
         {
-            // Список типов лунок для разнообразия (используем specificType)
             IndentationType[] indentationTypes = new IndentationType[]
             {
-        specificType
+                specificType
             };
 
-            // Список возможных размеров лунок (ширина, глубина, высота)
             var possibleSizes = new List<(int width, int depth, int height)>
-    {
-        (1, 1, 1),
-        (2, 2, 1),
-        (3, 3, 2)
-    };
+            {
+                (1, 1, 1),
+                (2, 2, 1),
+                (3, 3, 2)
+            };
 
             int indentationsAdded = 0;
 

@@ -202,7 +202,7 @@
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox1);
             this.Name = "AddIdentationForm";
-            this.Text = "AddIdentationForm";
+            this.Text = "Добавить лунку";
             this.Load += new System.EventHandler(this.AddIdentationForm_Load);
             this.groupBox1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownX)).EndInit();
