@@ -6,6 +6,8 @@ using System.Windows.Forms;
 using System.Linq;
 using test.DialogForms;
 using System.Threading.Tasks;
+using System.Threading;
+using Timer = System.Windows.Forms.Timer;
 
 namespace test
 {
@@ -13,7 +15,8 @@ namespace test
     {
         Bitmap bitmap;
         int bitmapH, bitmapW;
-        readonly object _lock = new object();
+        readonly Mutex _lock = new Mutex();
+        int lockint = 0;
         float[,] zBuffer;
         Scene scene;
         Camera camera;
@@ -379,7 +382,6 @@ namespace test
                                 {
                                     meshesToRemove.Add(mesh);
                                 }
-                                // Иначе фигура остаётся лежать на дне лунки
                             }
                         }
                     }
@@ -570,12 +572,12 @@ namespace test
                     }
                 }
             else
-                foreach (var mesh in scene.Meshes)
-                {
-                    //    Parallel.ForEach(scene.Meshes, mesh =>
-                    //{
-                    // Use the mesh's color
-                    Color objectColor = mesh.Color;
+                //foreach (var mesh in scene.Meshes)
+                //{
+                Parallel.ForEach(scene.Meshes, mesh =>
+            {
+                // Use the mesh's color
+                Color objectColor = mesh.Color;
 
                     // Special color for the light sphere if needed
                     if (mesh.Name == "LightSphere")
@@ -641,8 +643,8 @@ namespace test
                         }
                     });
                 //}
-                    //});
-                }
+            });
+        //}
 
             // Draw indentation wireframes if debug flag is true
             if (debug_identation)
@@ -651,7 +653,7 @@ namespace test
             }
 
             // Update PictureBox
-            lock (bitmap) lock (pictureBox1)
+            lock (bitmap)
                 pictureBox1.Image = bitmap;
         }
 
@@ -676,8 +678,8 @@ namespace test
                     Vector3 screenEnd = Vector3.Transform(projEnd.XYZ(), viewportMatrix);
 
                     // Draw the line in black
-                    lock (g)
-                        g.DrawLine(wireframePen, screenStart.X, screenStart.Y, screenEnd.X, screenEnd.Y);
+                    //lock (g)
+                    //    g.DrawLine(wireframePen, screenStart.X, screenStart.Y, screenEnd.X, screenEnd.Y);
                 }
             }
         }
@@ -849,7 +851,21 @@ namespace test
                         int g = (int)(objectColor.G * Clamp(iP, 0, 1));
                         int b = (int)(objectColor.B * Clamp(iP, 0, 1));
                         lock (_lock)
-                            bitmap.SetPixel(zIndex, yIndex, Color.FromArgb(r, g, b));
+                        {
+                                bool success = false;
+                                while (!success)
+                                {
+                                    try
+                                    {
+                                        bitmap.SetPixel(zIndex, yIndex, Color.FromArgb(r, g, b));
+                                        success = true;
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        continue;
+                                    }
+                                }
+                        }
                     }
                 }
             });
@@ -1049,10 +1065,6 @@ namespace test
             lblSimInfo.BackColor = Color.FromArgb(128, 0, 0, 0);
         }
         #endregion
-
-
-
-        
 
         private void ChangeFallSpeedLbl()
         {

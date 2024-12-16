@@ -81,6 +81,7 @@ private void DrawTriangle(Vector3 v1, Vector3 v2, Vector3 v3, float i1, float i2
 }
 \end{lstlisting}
 \end{center}
+\clearpage
 
 \begin{center}
 \captionsetup{justification=raggedright,singlelinecheck=off}
@@ -95,7 +96,6 @@ public void ComputeNormals()
         Vector3 v0 = Vertices[face.A].Position;
         Vector3 v1 = Vertices[face.B].Position;
         Vector3 v2 = Vertices[face.C].Position;
-
         Vector3 edge1 = v1 - v0;
         Vector3 edge2 = v2 - v0;
 
@@ -126,12 +126,9 @@ public void ComputeNormals()
 private float ComputeLighting(Vector3 position, Vector3 normal)
 {
     float intensity = 0;
-
     float ambient = 0.2f * light.Intensity;
     intensity += ambient;
-
     Vector3 lightDir = Vector3.Normalize(light.Position - position);
-
     float nDotL = Vector3.Dot(normal, lightDir);
 
     if (nDotL > 0)
@@ -154,10 +151,8 @@ private bool IsInShadow(Vector3 point, Vector3 lightPos)
 {
     Vector3 dir = Vector3.Normalize(lightPos - point);
     float distanceToLight = Vector3.Distance(lightPos, point);
-
     if (distanceToLight < 0.001f)
         return false;
-
     float bias = 0.001f;
     Vector3 shadowOrigin = point + dir * bias;
 
@@ -170,11 +165,9 @@ private bool IsInShadow(Vector3 point, Vector3 lightPos)
             Vertex v1 = mesh.Vertices[face.A];
             Vertex v2 = mesh.Vertices[face.B];
             Vertex v3 = mesh.Vertices[face.C];
-
             Vector3 worldV1 = Vector3.Transform(v1.Position, worldMatrix);
             Vector3 worldV2 = Vector3.Transform(v2.Position, worldMatrix);
             Vector3 worldV3 = Vector3.Transform(v3.Position, worldMatrix);
-
             if (IntersectTriangle(shadowOrigin, dir, worldV1, worldV2, worldV3, out float t))
                 if (t > 0 && t < distanceToLight)
                     return true;
